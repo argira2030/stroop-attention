@@ -7,7 +7,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
-
 :root {
   --bg: #0a0a0a;
   --surface: #111;
@@ -203,38 +202,22 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
 
 <script>
 // ============================================================
-//  CONFIGURACIÓN credenciales)
+//  CONFIGURACIÓN SUPABASE (tus credenciales)
 // ============================================================
 const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
-
-
-const PASSWORD_HASH = 'b7e4b2a5b9c8f3a1d2e5f6a8b9c7d4e2f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1'; 
-const CORRECT_HASH = "95d8c9f8f1c6a2b3e4d5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8";
+const ADMIN_PASSWORD = 'argira2025';   // cámbialo si quieres
 
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let allData = [];
 let currentFilter = 'all';
 
 // ============================================================
-//
+//  LOGIN
 // ============================================================
-async function sha256(message) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
-}
-
-// ============================================================
-//  
-// ============================================================
-async function tryLogin() {
+function tryLogin() {
   const pwd = document.getElementById('pwd-input').value;
-  const inputHash = await sha256(pwd);
-  if (inputHash === CORRECT_HASH) {
+  if (pwd === ADMIN_PASSWORD) {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     loadData();
@@ -245,7 +228,7 @@ async function tryLogin() {
 }
 
 // ============================================================
-//  CARGAR DATOS DESDE S
+//  CARGAR DATOS DESDE SUPABASE
 // ============================================================
 async function loadData() {
   try {
@@ -277,6 +260,7 @@ function updateStats() {
   document.getElementById('stat-participants').innerText = participants.length;
   document.getElementById('stat-trials').innerText = allData.length;
 
+  // Stroop effect con trials válidos (correctos y RT entre 200-2000ms)
   const valid = allData.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
   const cong = valid.filter(t => t.congruent).map(t=>t.rt);
   const incong = valid.filter(t => !t.congruent).map(t=>t.rt);
@@ -406,6 +390,11 @@ function exportCSV() {
   a.download = `stroop_admin_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 }
+
+// ============================================================
+//  INICIO
+// ============================================================
+// (la carga se dispara tras login correcto)
 </script>
 </body>
   </html>
