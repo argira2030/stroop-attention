@@ -19,49 +19,22 @@
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
-
-/* LOGIN */
-#login-screen {
-  display: flex; align-items: center; justify-content: center;
-  min-height: 100vh;
-}
-.login-box {
-  background: var(--surface); border: 1px solid var(--border);
-  padding: 40px 32px; width: 320px; border-radius: 4px;
-}
+#login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.login-box { background: var(--surface); border: 1px solid var(--border); padding: 40px 32px; width: 320px; border-radius: 4px; }
 .login-box h1 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
 .login-box p { font-size: 11px; color: var(--muted); margin-bottom: 28px; letter-spacing: 0.1em; }
-.login-box input {
-  width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border);
-  color: var(--text); font-family: 'Space Mono', monospace; font-size: 13px;
-  border-radius: 2px; margin-bottom: 12px;
-}
+.login-box input { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'Space Mono', monospace; font-size: 13px; border-radius: 2px; margin-bottom: 12px; }
 .login-box input:focus { outline: none; border-color: var(--accent); }
-.login-btn {
-  width: 100%; padding: 13px; background: var(--accent); color: #000;
-  border: none; font-family: 'Syne', sans-serif; font-weight: 700;
-  font-size: 13px; cursor: pointer; border-radius: 2px; letter-spacing: 0.05em;
-}
+.login-btn { width: 100%; padding: 13px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; border-radius: 2px; letter-spacing: 0.05em; }
 .login-error { font-size: 11px; color: var(--accent2); margin-top: 10px; display: none; }
-
-/* DASHBOARD */
 #dashboard { display: none; }
-.topbar {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 16px 20px; border-bottom: 1px solid var(--border);
-  background: rgba(10,10,10,0.95); position: sticky; top: 0; z-index: 100;
-}
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.95); position: sticky; top: 0; z-index: 100; }
 .topbar-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 13px; color: var(--accent); letter-spacing: 0.15em; }
 .topbar-right { display: flex; gap: 8px; align-items: center; }
-.btn-sm {
-  padding: 7px 14px; font-family: 'Syne', sans-serif; font-weight: 700;
-  font-size: 11px; cursor: pointer; border-radius: 2px; letter-spacing: 0.05em;
-}
+.btn-sm { padding: 7px 14px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; cursor: pointer; border-radius: 2px; letter-spacing: 0.05em; }
 .btn-accent { background: var(--accent); color: #000; border: none; }
 .btn-outline { background: transparent; color: var(--muted); border: 1px solid var(--border); }
-.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
 .main { padding: 20px; max-width: 1000px; margin: 0 auto; }
-
 .stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
 .stat-card { background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: 4px; }
 .stat-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
@@ -69,37 +42,21 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
 .stat-value.a { color: var(--accent); }
 .stat-value.b { color: var(--accent3); }
 .stat-value.c { color: var(--accent2); }
-.stat-value.d { color: var(--text); }
-
 .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-.filter-btn {
-  padding: 6px 14px; font-family: 'Space Mono', monospace; font-size: 11px;
-  cursor: pointer; border-radius: 2px; border: 1px solid var(--border);
-  background: transparent; color: var(--muted);
-}
+.filter-btn { padding: 6px 14px; font-family: 'Space Mono', monospace; font-size: 11px; cursor: pointer; border-radius: 2px; border: 1px solid var(--border); background: transparent; color: var(--muted); }
 .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(232,255,74,0.05); }
-
 .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
 .table-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
 .data-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-.data-table th { padding: 10px 12px; text-align: left; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
-.data-table td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); white-space: nowrap; }
-.data-table tr:last-child td { border-bottom: none; }
-.data-table tr:hover td { background: rgba(255,255,255,0.02); }
-
-.badge-exp { color: var(--accent); font-size: 10px; }
-.badge-ctrl { color: var(--accent3); font-size: 10px; }
+.data-table th { padding: 10px 12px; text-align: left; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+.data-table td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.badge-exp { color: var(--accent); }
+.badge-ctrl { color: var(--accent3); }
 .correct-yes { color: var(--accent3); }
 .correct-no { color: var(--accent2); }
-.cong-yes { color: var(--accent); font-size: 10px; }
-.cong-no { color: var(--muted); font-size: 10px; }
-.outlier { color: var(--muted); text-decoration: line-through; }
-
-.p-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-.p-table th { padding: 10px 12px; text-align: left; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
-.p-table td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
-
-.loading { padding: 40px; text-align: center; color: var(--muted); font-size: 12px; letter-spacing: 0.1em; }
+.cong-yes { color: var(--accent); }
+.cong-no { color: var(--muted); }
+.loading { padding: 40px; text-align: center; color: var(--muted); }
 .section-title { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; margin-top: 20px; }
 .stroop-effect-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
 .stroop-effect-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.5s ease; }
@@ -109,7 +66,6 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
     <h1>STROOP ADMIN</h1>
@@ -120,7 +76,6 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
   </div>
 </div>
 
-<!-- DASHBOARD -->
 <div id="dashboard">
   <div class="topbar">
     <div class="topbar-logo">STROOP · ADMIN</div>
@@ -130,72 +85,47 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
       <button class="btn-sm btn-accent" onclick="exportCSV()">↓ CSV</button>
     </div>
   </div>
-
   <div class="main">
     <div id="dashboard-error" class="error-msg" style="display:none;"></div>
-
     <div class="stat-row">
       <div class="stat-card"><div class="stat-label">Participantes</div><div class="stat-value a" id="stat-participants">—</div></div>
       <div class="stat-card"><div class="stat-label">Trials totales</div><div class="stat-value d" id="stat-trials">—</div></div>
-      <div class="stat-card"><div class="stat-label">Stroop Effect (válidos)</div><div class="stat-value b" id="stat-stroop">—</div><div class="stroop-effect-bar"><div class="stroop-effect-fill" id="stroop-bar" style="width:0%"></div></div></div>
+      <div class="stat-card"><div class="stat-label">Stroop Effect</div><div class="stat-value b" id="stat-stroop">—</div><div class="stroop-effect-bar"><div class="stroop-effect-fill" id="stroop-bar"></div></div></div>
       <div class="stat-card"><div class="stat-label">Precisión global</div><div class="stat-value c" id="stat-acc">—</div></div>
     </div>
-
     <div class="section-title">// Participantes</div>
-    <div class="table-wrap">
-      <div class="table-header"><span>Resumen por participante</span><span id="p-count"></span></div>
-      <div style="overflow-x:auto;"><table class="p-table"><thead><tr><th>ID</th><th>Cohort</th><th>Trials</th><th>RT Cong</th><th>RT Incong</th><th>Efecto</th><th>Precisión</th><th>Dispositivo</th></tr></thead><tbody id="p-tbody"><tr><td colspan="8" class="loading">Cargando...</td></tr></tbody></table></div>
-    </div>
-
+    <div class="table-wrap"><div class="table-header"><span>Resumen</span><span id="p-count"></span></div><div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>ID</th><th>Cohort</th><th>Trials</th><th>RT Cong</th><th>RT Incong</th><th>Efecto</th><th>Precisión</th><th>Dispositivo</th></tr></thead><tbody id="p-tbody"><tr><td colspan="8" class="loading">Cargando...</td></tr></tbody></table></div></div>
     <div class="section-title">// Trials raw</div>
     <div class="filter-bar">
       <button class="filter-btn active" onclick="setFilter('all', this)">Todos</button>
       <button class="filter-btn" onclick="setFilter('experimental', this)">Experimental</button>
       <button class="filter-btn" onclick="setFilter('control', this)">Control</button>
-      <button class="filter-btn" onclick="setFilter('correct', this)">Solo correctos</button>
-      <button class="filter-btn" onclick="setFilter('errors', this)">Solo errores</button>
-      <button class="filter-btn" onclick="setFilter('valid', this)">Válidos (200-2000ms)</button>
+      <button class="filter-btn" onclick="setFilter('correct', this)">Correctos</button>
+      <button class="filter-btn" onclick="setFilter('errors', this)">Errores</button>
+      <button class="filter-btn" onclick="setFilter('valid', this)">Válidos</button>
     </div>
-
-    <div class="table-wrap">
-      <div class="table-header"><span id="table-label">Todos los trials</span><span id="table-count"></span></div>
-      <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>#</th><th>Participant</th><th>Cohort</th><th>Word</th><th>Ink</th><th>Resp</th><th>RT</th><th>Correcto</th><th>Congruente</th></tr></thead><tbody id="trials-tbody"><tr><td colspan="9" class="loading">Cargando...</td></tr></tbody></table></div>
-    </div>
+    <div class="table-wrap"><div class="table-header"><span id="table-label">Trials</span><span id="table-count"></span></div><div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>#</th><th>Participant</th><th>Cohort</th><th>Word</th><th>Ink</th><th>Resp</th><th>RT</th><th>Correcto</th><th>Congruente</th></tr></thead><tbody id="trials-tbody"><tr><td colspan="9" class="loading">Cargando...</td></tr></tbody></table></div></div>
   </div>
 </div>
 
 <script>
 // ============================================================
-//  CONFIGURACIÓN SUPABASE
+//  SUPABASE CONFIG
 // ============================================================
 const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
 
-// HASH CORRECTO de "argira2025" (calculado con SHA-256)
-const CORRECT_HASH = "95d8c9f8f1c6a2b3e4d5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8";
+// CONTRASEÑA EN TEXTO PLANO (cámbiala por la que quieras)
+const ADMIN_PASSWORD = 'argira2025';
 
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let allData = [];
 let currentFilter = 'all';
 
-// ------------------------------------------------------------
-//  SHA-256
-// ------------------------------------------------------------
-async function sha256(message) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// ------------------------------------------------------------
-//  LOGIN
-// ------------------------------------------------------------
-async function tryLogin() {
+// LOGIN
+function tryLogin() {
   const pwd = document.getElementById('pwd-input').value;
-  const inputHash = await sha256(pwd);
-  if (inputHash === CORRECT_HASH) {
+  if (pwd === ADMIN_PASSWORD) {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     loadData();
@@ -205,31 +135,21 @@ async function tryLogin() {
   }
 }
 
-// ------------------------------------------------------------
-//  CARGAR DATOS DESDE SUPABASE
-// ------------------------------------------------------------
+// CARGAR DATOS
 async function loadData() {
   const errorDiv = document.getElementById('dashboard-error');
   errorDiv.style.display = 'none';
   try {
-    console.log("Conectando a Supabase...");
-    const { data, error, status } = await _sb
+    const { data, error } = await _sb
       .from('stroop_trials')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(500);
-
-    if (error) {
-      console.error("Error Supabase:", error);
-      throw new Error(`Supabase error: ${error.message} (status ${status})`);
-    }
-
-    console.log(`Datos recibidos: ${data?.length || 0} filas`);
+    if (error) throw error;
     allData = data || [];
-
     if (allData.length === 0) {
       errorDiv.style.display = 'block';
-      errorDiv.innerHTML = '⚠️ No se encontraron registros en la tabla <strong>stroop_trials</strong>. ¿Seguro que se han guardado datos desde el test? Verifica la política RLS (necesitas permitir SELECT).';
+      errorDiv.innerHTML = 'No hay registros. Verifica permisos SELECT en Supabase.';
     } else {
       updateStats();
       renderParticipants();
@@ -237,20 +157,12 @@ async function loadData() {
     }
     document.getElementById('refresh-time').innerText = 'Actualizado: ' + new Date().toLocaleTimeString();
   } catch(e) {
-    console.error(e);
     errorDiv.style.display = 'block';
-    errorDiv.innerHTML = `❌ Error al cargar: ${e.message}<br><br>Posibles causas:<br>
-      - La tabla no se llama <strong>stroop_trials</strong> (revisa el nombre exacto en Supabase).<br>
-      - La clave anon no tiene permiso de SELECT (ejecuta SQL: <code>CREATE POLICY "public_select" ON stroop_trials FOR SELECT USING (true);</code>).<br>
-      - El proyecto Supabase está pausado o la URL/KEY son incorrectas.`;
+    errorDiv.innerHTML = 'Error: ' + e.message;
   }
 }
 
-// ------------------------------------------------------------
-//  ESTADÍSTICAS (flexible con nombres de columna)
-// ------------------------------------------------------------
 function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
-
 function getCohort(row) { return row.cohort || row.group || '?'; }
 function getDevice(row) { return row.device_type || row.device || '—'; }
 
@@ -258,14 +170,12 @@ function updateStats() {
   const participants = [...new Set(allData.map(t=>t.participant_id).filter(id=>id))];
   document.getElementById('stat-participants').innerText = participants.length;
   document.getElementById('stat-trials').innerText = allData.length;
-
   const valid = allData.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
   const cong = valid.filter(t => t.congruent).map(t=>t.rt);
   const incong = valid.filter(t => !t.congruent).map(t=>t.rt);
   const effect = Math.round(mean(incong) - mean(cong));
-  document.getElementById('stat-stroop').innerText = effect > 0 ? '+' + effect + ' ms' : effect + ' ms';
+  document.getElementById('stat-stroop').innerText = effect + ' ms';
   document.getElementById('stroop-bar').style.width = Math.min(100, Math.abs(effect)/3) + '%';
-
   const acc = allData.length ? (allData.filter(t=>t.correct).length / allData.length * 100).toFixed(1) : '—';
   document.getElementById('stat-acc').innerText = acc + '%';
 }
@@ -274,12 +184,7 @@ function renderParticipants() {
   const participants = [...new Set(allData.map(t=>t.participant_id).filter(id=>id))];
   const tbody = document.getElementById('p-tbody');
   document.getElementById('p-count').innerText = participants.length + ' participantes';
-
-  if (!participants.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="loading">Sin datos aún</td></tr>';
-    return;
-  }
-
+  if (!participants.length) { tbody.innerHTML = '<tr><td colspan="8">Sin datos</td></tr>'; return; }
   tbody.innerHTML = participants.map(pid => {
     const pTrials = allData.filter(t => t.participant_id === pid);
     const cohort = getCohort(pTrials[0]);
@@ -291,75 +196,45 @@ function renderParticipants() {
     const acc = pTrials.length ? (pTrials.filter(t=>t.correct).length/pTrials.length*100).toFixed(0) : '—';
     const shortId = pid.slice(-8);
     const cohortClass = cohort === 'experimental' ? 'badge-exp' : 'badge-ctrl';
-    const effectColor = (typeof effect === 'number' && effect > 0) ? 'color:var(--accent3)' : 'color:var(--accent2)';
-
-    return `<tr>
-      <td style="color:var(--muted);font-size:10px">${shortId}</td>
-      <td class="${cohortClass}">${cohort}</td>
-      <td>${pTrials.length}</td>
-      <td>${cong.length ? Math.round(mean(cong))+'ms' : '—'}</td>
-      <td>${incong.length ? Math.round(mean(incong))+'ms' : '—'}</td>
-      <td style="${effectColor}">${typeof effect === 'number' ? (effect>0?'+':'')+effect+'ms' : '—'}</td>
-      <td>${acc}%</td>
-      <td style="color:var(--muted);font-size:10px">${device}</td>
-    </tr>`;
+    return `<tr><td>${shortId}</td><td class="${cohortClass}">${cohort}</td><td>${pTrials.length}</td><td>${cong.length ? Math.round(mean(cong))+'ms' : '—'}</td><td>${incong.length ? Math.round(mean(incong))+'ms' : '—'}</td><td>${typeof effect === 'number' ? (effect>0?'+':'')+effect+'ms' : '—'}</td><td>${acc}%</td><td>${device}</td></tr>`;
   }).join('');
 }
 
-// ------------------------------------------------------------
-//  FILTROS Y TABLA DE TRIALS
-// ------------------------------------------------------------
 const COLOR_HEX = { red:'#ff4a6e', blue:'#4a9eff', green:'#4affda', yellow:'#e8ff4a', purple:'#c47aff' };
-
 function setFilter(f, btn) {
   currentFilter = f;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderTrials();
 }
-
 function renderTrials() {
   let data = [...allData];
-  const labels = { all:'Todos los trials', experimental:'Grupo Experimental', control:'Grupo Control', correct:'Solo correctos', errors:'Solo errores', valid:'Válidos (200–2000ms)' };
-  document.getElementById('table-label').innerText = labels[currentFilter] || 'Trials';
-
   if (currentFilter === 'experimental') data = data.filter(t=>getCohort(t)==='experimental');
   else if (currentFilter === 'control') data = data.filter(t=>getCohort(t)==='control');
   else if (currentFilter === 'correct') data = data.filter(t=>t.correct);
   else if (currentFilter === 'errors') data = data.filter(t=>!t.correct);
   else if (currentFilter === 'valid') data = data.filter(t=>t.correct && t.rt>=200 && t.rt<=2000);
-
   document.getElementById('table-count').innerText = data.length + ' trials';
   const tbody = document.getElementById('trials-tbody');
-
-  if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="loading">Sin datos</td></tr>';
-    return;
-  }
-
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="9">Sin datos</td></tr>'; return; }
   tbody.innerHTML = data.slice(0, 100).map((t, i) => {
     const isOutlier = t.rt && (t.rt < 200 || t.rt > 2000);
     const rtClass = isOutlier ? 'outlier' : '';
     const cohortClass = getCohort(t) === 'experimental' ? 'badge-exp' : 'badge-ctrl';
     const inkColor = COLOR_HEX[t.ink] || '#fff';
     const shortId = (t.participant_id || '').slice(-8);
-
     return `<tr>
-      <td style="color:var(--muted)">${t.trial || (i+1)}</td>
-      <td style="color:var(--muted);font-size:10px">${shortId}</td>
+      <td>${t.trial || (i+1)}</td>
+      <td>${shortId}</td>
       <td class="${cohortClass}">${getCohort(t)}</td>
       <td style="color:${inkColor}">${(t.word||'').toUpperCase()}</td>
       <td style="color:${inkColor}">${t.ink||'—'}</td>
-      <td style="color:${COLOR_HEX[t.response]||'#fff'}">${t.response||'—'}</td>
+      <td>${t.response||'—'}</td>
       <td class="${rtClass}">${t.rt||'—'}ms${isOutlier?' ⚠':''}</td>
       <td class="${t.correct?'correct-yes':'correct-no'}">${t.correct?'✓':'✗'}</td>
       <td class="${t.congruent?'cong-yes':'cong-no'}">${t.congruent?'CONG':'INCON'}</td>
     </tr>`;
   }).join('');
-
-  if (data.length > 100) {
-    tbody.innerHTML += `<tr><td colspan="9" style="text-align:center;padding:12px;color:var(--muted);font-size:10px;">... ${data.length - 100} trials más — exporta CSV para verlos todos</td></tr>`;
-  }
 }
 
 function exportCSV() {
