@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <title>Stroop Admin · Argira</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
@@ -24,32 +24,31 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
 .login-box h1 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
 .login-box p { font-size: 11px; color: var(--muted); margin-bottom: 28px; letter-spacing: 0.1em; }
 .login-box input { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'Space Mono', monospace; font-size: 13px; border-radius: 2px; margin-bottom: 12px; }
-.login-box input:focus { outline: none; border-color: var(--accent); }
-.login-btn { width: 100%; padding: 13px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; border-radius: 2px; letter-spacing: 0.05em; }
+.login-btn { width: 100%; padding: 13px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; border-radius: 2px; }
 .login-error { font-size: 11px; color: var(--accent2); margin-top: 10px; display: none; }
 #dashboard { display: none; }
-.topbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.95); position: sticky; top: 0; z-index: 100; }
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.95); position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 10px; }
 .topbar-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 13px; color: var(--accent); letter-spacing: 0.15em; }
-.topbar-right { display: flex; gap: 8px; align-items: center; }
-.btn-sm { padding: 7px 14px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; cursor: pointer; border-radius: 2px; letter-spacing: 0.05em; }
+.topbar-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn-sm { padding: 7px 14px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; cursor: pointer; border-radius: 2px; }
 .btn-accent { background: var(--accent); color: #000; border: none; }
 .btn-outline { background: transparent; color: var(--muted); border: 1px solid var(--border); }
 .main { padding: 20px; max-width: 1000px; margin: 0 auto; }
 .stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
 .stat-card { background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: 4px; }
 .stat-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
-.stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; word-break: break-word; }
 .stat-value.a { color: var(--accent); }
 .stat-value.b { color: var(--accent3); }
 .stat-value.c { color: var(--accent2); }
 .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
 .filter-btn { padding: 6px 14px; font-family: 'Space Mono', monospace; font-size: 11px; cursor: pointer; border-radius: 2px; border: 1px solid var(--border); background: transparent; color: var(--muted); }
 .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(232,255,74,0.05); }
-.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
-.table-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
-.data-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-.data-table th { padding: 10px 12px; text-align: left; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
-.data-table td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow-x: auto; margin-bottom: 20px; }
+.table-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.data-table, .p-table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 600px; }
+.data-table th, .data-table td, .p-table th, .p-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.03); white-space: nowrap; }
+.data-table th, .p-table th { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
 .badge-exp { color: var(--accent); }
 .badge-ctrl { color: var(--accent3); }
 .correct-yes { color: var(--accent3); }
@@ -61,9 +60,21 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
 .stroop-effect-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
 .stroop-effect-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.5s ease; }
 .refresh-time { font-size: 10px; color: var(--muted); }
-.error-msg { background: #ff4a6e20; border-left: 3px solid #ff4a6e; padding: 10px; margin: 10px 0; font-size: 11px; }
+
+/* RESPONSIVE MÓVIL */
+@media (max-width: 680px) {
+  .stat-row { grid-template-columns: 1fr; gap: 8px; }
+  .stat-value { font-size: 22px; }
+  .filter-btn { font-size: 9px; padding: 4px 10px; }
+  .data-table, .p-table { font-size: 9px; min-width: 500px; }
+  .data-table th, .data-table td, .p-table th, .p-table td { padding: 6px 8px; white-space: nowrap; }
+  .table-header { flex-direction: column; align-items: flex-start; }
+  .topbar { flex-direction: column; align-items: stretch; text-align: center; }
+  .topbar-right { justify-content: center; }
+  .login-box { width: 90%; padding: 30px 20px; }
+}
 </style>
-</head>
+
 <body>
 
 <div id="login-screen">
