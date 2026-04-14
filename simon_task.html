@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Simon Task · Cognitive Control</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --muted: #666;
+  --accent: #e8ff4a;
+  --accent2: #ff4a6e;
+  --accent3: #4affda;
+  --danger: #ff4a6e;
+  --success: #4affda;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Space Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(232,255,74,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,255,74,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; }
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 32px; border-bottom: 1px solid var(--border);
+  background: rgba(10,10,10,0.8); backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo {
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent);
+}
+.badge {
+  font-size: 10px; letter-spacing: 0.15em; color: var(--muted);
+  text-transform: uppercase; border: 1px solid var(--border); padding: 4px 10px; border-radius: 2px;
+}
+#screen-intro { justify-content: center; align-items: center; padding: 40px 32px; }
+.intro-content { max-width: 600px; width: 100%; animation: fadeUp 0.6s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.intro-tag { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+.intro-title { font-family: 'Syne', sans-serif; font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.05; margin-bottom: 24px; }
+.intro-title span { color: var(--accent); }
+.intro-desc { font-size: 13px; line-height: 1.8; color: #aaa; margin-bottom: 32px; }
+.ethics-box {
+  border: 1px solid var(--border); background: var(--surface); padding: 16px 20px;
+  border-radius: 4px; font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 32px;
+}
+.ethics-box strong { color: var(--accent3); display: block; margin-bottom: 4px; letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px; }
+.group-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.group-btn {
+  padding: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  cursor: pointer; font-family: 'Space Mono', monospace; font-size: 12px; text-align: left;
+  border-radius: 4px; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.group-btn::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; }
+.group-btn.experimental::before { background: linear-gradient(135deg, rgba(232,255,74,0.08), transparent); }
+.group-btn.control::before { background: linear-gradient(135deg, rgba(74,255,218,0.08), transparent); }
+.group-btn:hover::before, .group-btn.selected::before { opacity: 1; }
+.group-btn.selected.experimental { border-color: var(--accent); }
+.group-btn.selected.control { border-color: var(--accent3); }
+.group-btn .g-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 4px; display: block; }
+.group-btn.experimental .g-label { color: var(--accent); }
+.group-btn.control .g-label { color: var(--accent3); }
+.group-btn .g-desc { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.btn-primary { width: 100%; padding: 16px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+#screen-task { align-items: center; justify-content: center; padding: 40px 32px; }
+.task-wrapper { max-width: 700px; width: 100%; }
+.progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 32px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+.trial-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 48px; }
+.stroop-stage-label { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); text-align: center; margin-bottom: 12px; }
+.stimulus-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  margin-bottom: 48px;
+  position: relative;
+}
+.fixation { font-size: 48px; color: var(--muted); user-select: none; }
+.simon-stimulus {
+  font-family: 'Space Mono', monospace;
+  font-size: clamp(48px, 12vw, 96px);
+  font-weight: 800;
+  user-select: none;
+  animation: stimIn 0.15s ease both;
+  position: relative;
+  transition: transform 0.1s ease;
+}
+.simon-stimulus.left-pos { transform: translateX(-30%); }
+.simon-stimulus.right-pos { transform: translateX(30%); }
+@keyframes stimIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+.response-grid { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
+.resp-btn {
+  padding: 16px 32px; border: 2px solid var(--border); background: var(--surface);
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; cursor: pointer;
+  border-radius: 60px; text-transform: uppercase; transition: all 0.15s;
+}
+.resp-btn.left { color: var(--accent3); border-color: var(--accent3); }
+.resp-btn.right { color: var(--accent2); border-color: var(--accent2); }
+.resp-btn:active { transform: scale(0.96); }
+.feedback-flash { position: fixed; inset: 0; pointer-events: none; z-index: 200; opacity: 0; transition: opacity 0.1s; }
+.feedback-flash.correct { background: rgba(74,255,218,0.07); opacity: 1; }
+.feedback-flash.wrong { background: rgba(255,74,110,0.07); opacity: 1; }
+.rt-ticker { position: fixed; top: 80px; right: 32px; font-size: 11px; color: var(--muted); font-family: monospace; }
+#screen-results { padding: 40px 32px; align-items: center; }
+.results-content { max-width: 800px; width: 100%; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 4px; }
+.stat-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; }
+.stat-value.accent { color: var(--accent); }
+.stat-value.accent2 { color: var(--accent2); }
+.stat-value.accent3 { color: var(--accent3); }
+.cong-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 32px; }
+.cong-table th, .cong-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+.cong-table th { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+.chart-section { background: var(--surface); border: 1px solid var(--border); padding: 24px; border-radius: 4px; margin-bottom: 24px; }
+.chart-title { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+canvas { display: block; width: 100%; height: auto; }
+.trial-log { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 24px; overflow: hidden; }
+.trial-log-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+.trial-log-body { max-height: 200px; overflow-y: auto; font-size: 11px; }
+.trial-row { display: grid; grid-template-columns: 40px 80px 80px 80px 60px; padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.03); align-items: center; gap: 8px; }
+.trial-row.header { color: var(--muted); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; background: rgba(255,255,255,0.02); }
+.correct-dot { color: var(--success); }
+.wrong-dot { color: var(--danger); }
+.cong-yes { color: var(--accent); }
+.cong-no { color: var(--danger); }
+.paper-box { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
+.paper-box h3 { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+.paper-text { font-size: 12px; line-height: 1.9; color: #ccc; white-space: pre-wrap; font-family: 'Space Mono', monospace; }
+.action-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-export { flex: 1; min-width: 140px; padding: 14px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-outline { flex: 1; min-width: 140px; padding: 14px; background: transparent; color: var(--text); border: 1px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.lang-btn { padding: 4px 10px; background: transparent; border: 1px solid var(--border); color: var(--muted); font-size: 10px; cursor: pointer; border-radius: 2px; }
+.lang-btn.active, .lang-btn:hover { border-color: var(--accent); color: var(--accent); }
+.priming-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(12px);
+  z-index: 300; display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+}
+.priming-overlay.active { opacity: 1; visibility: visible; }
+.priming-card { max-width: 500px; background: var(--surface); border: 1px solid var(--accent); padding: 40px 32px; border-radius: 12px; text-align: center; }
+.priming-icon { font-size: 48px; margin-bottom: 20px; }
+.priming-message { font-size: 24px; font-weight: 700; margin-bottom: 16px; color: var(--accent); }
+.priming-sub { font-size: 13px; color: var(--muted); }
+.priming-progress { margin-top: 28px; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.priming-progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.2s linear; }
+@media (max-width: 680px) {
+  #screen-results { padding: 20px 16px !important; }
+  .stats-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+  .stat-value { font-size: 24px !important; }
+  .chart-section { padding: 12px !important; overflow-x: auto !important; }
+  .cong-table { font-size: 10px !important; min-width: 400px; }
+  .trial-row { grid-template-columns: 30px 60px 60px 60px 50px !important; font-size: 9px !important; gap: 4px !important; padding: 6px 8px !important; }
+  canvas { width: 100% !important; height: auto !important; }
+  .paper-text { font-size: 10px !important; line-height: 1.5 !important; }
+  .action-row { flex-direction: column; gap: 8px; }
+  .btn-export, .btn-outline { min-width: auto; width: 100%; }
+  .header { padding: 12px 16px !important; }
+  .logo { font-size: 12px !important; }
+  .badge { font-size: 8px !important; padding: 3px 6px !important; }
+  .rt-ticker { top: auto; bottom: 16px; right: 16px; background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 20px; font-size: 10px; }
+  .response-grid { gap: 12px; }
+  .resp-btn { padding: 12px 20px; font-size: 18px; }
+  .simon-stimulus.left-pos { transform: translateX(-20%); }
+  .simon-stimulus.right-pos { transform: translateX(20%); }
+}
+</style>
+</head>
+<body>
+
+<div class="feedback-flash" id="feedbackFlash"></div>
+<div id="primingOverlay" class="priming-overlay">
+  <div class="priming-card">
+    <div class="priming-icon">🧠</div>
+    <div class="priming-message" id="primingMsg">Focus attention</div>
+    <div class="priming-sub" id="primingSub">Prepare for Simon task</div>
+    <div class="priming-progress"><div class="priming-progress-fill" id="primingFill"></div></div>
+  </div>
+</div>
+
+<!-- INTRO SCREEN -->
+<div class="screen active" id="screen-intro">
+  <div class="header">
+    <div class="logo">SIMON · HCI</div>
+    <div style="display:flex;gap:10px;">
+      <div class="badge">Spatial Compatibility Task</div>
+    </div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
+    <div class="intro-content">
+      <div class="intro-tag">// Simon Effect Paradigm</div>
+      <h1 class="intro-title">Simon<br><span>Spatial</span><br>Task</h1>
+      <p class="intro-desc">Respond to the direction of the arrow (LEFT or RIGHT). Ignore its position on screen. When direction and position match → congruent. When they mismatch → incongruent. Press LEFT or RIGHT button as fast and accurately as possible.</p>
+      <div class="ethics-box"><strong>⚖ Ethical Statement</strong><span>No tracking. Local only. Data stored in Supabase.</span></div>
+      <div class="ethics-box" style="border-color:#333; display:flex; justify-content:space-between;">
+        <div><strong style="color:var(--accent)">⬡ PARTICIPANT ID</strong><span id="pidDisplay" style="margin-left:12px;"></span></div>
+        <button onclick="regenerateID()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:4px 8px;">↺</button>
+      </div>
+      <div style="margin-bottom:16px; font-size:11px; color:var(--muted);">Select group assignment</div>
+      <div class="group-row">
+        <button class="group-btn experimental" onclick="selectGroup('experimental')" id="btn-exp"><span class="g-label">Experimental</span><span class="g-desc">Receives attention priming before task</span></button>
+        <button class="group-btn control" onclick="selectGroup('control')" id="btn-ctrl"><span class="g-label">Control</span><span class="g-desc">Direct cognitive task sequence</span></button>
+      </div>
+      <button class="btn-primary" id="startBtn" disabled onclick="startStudy()">Begin Study →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK SCREEN -->
+<div class="screen" id="screen-task">
+  <div class="header"><div class="logo">SIMON · HCI</div><div class="badge" id="phaseLabel">Practice</div></div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:32px 24px;">
+    <div class="task-wrapper">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>
+      <div class="trial-meta"><span id="trialCounter">Trial 0 / 0</span><span id="phaseDesc">Warm-up</span></div>
+      <div class="stroop-stage-label" id="stageLabel">What is the DIRECTION of the arrow?</div>
+      <div class="stimulus-area">
+        <div class="fixation" id="fixation">+</div>
+        <div class="simon-stimulus" id="stimulus" style="display:none"></div>
+      </div>
+      <div class="response-grid">
+        <button class="resp-btn left" onclick="respond('left')">← LEFT</button>
+        <button class="resp-btn right" onclick="respond('right')">RIGHT →</button>
+      </div>
+    </div>
+  </div>
+  <div class="rt-ticker" id="rtTicker"></div>
+</div>
+
+<!-- RESULTS SCREEN -->
+<div class="screen" id="screen-results">
+  <div class="header"><div class="logo">SIMON · HCI</div><div class="badge">Analysis Complete</div></div>
+  <div style="padding:40px 32px; display:flex; justify-content:center;">
+    <div class="results-content">
+      <h2 class="results-title">Results</h2><p class="results-subtitle" id="resultsMeta"></p>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="chart-section"><div class="chart-title">// Simon Effect</div><table class="cong-table" id="congTable"><tr><th>Condition</th><th>N (valid)</th><th>Mean RT (ms)</th><th>SD RT</th><th>Accuracy</th></tr></table></div>
+      <div class="chart-section"><div class="chart-title">// RT Trial Sequence <span style="font-size:9px;">● cyan=congruent · ● pink=incongruent · ● red=error</span></div><canvas id="rtChart" height="200"></canvas></div>
+      <div class="chart-section"><div class="chart-title">// RT Distribution (outliers filtered)</div><canvas id="distChart" height="180"></canvas></div>
+      <div class="trial-log"><div class="trial-log-header">// Raw Trial Log (Main)</div><div class="trial-log-body"><div class="trial-row header"><span>#</span><span>Direction</span><span>Position</span><span>Response</span><span>RT(ms)</span><span>Result</span></div><div id="trialLog"></div></div></div>
+      <div class="paper-box"><h3>// APA Style Results</h3><div class="paper-text" id="paperText"></div></div>
+      <div class="action-row">
+        <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
+        <button class="btn-export" style="background:var(--accent3);color:#000;" onclick="exportJSON()">↓ Export JSON</button>
+        <button class="btn-outline" onclick="resetStudy()">↺ New Session</button>
+      </div>
+      <div id="sessionPersistNote" style="margin-top:12px;font-size:10px;color:var(--muted);">// Session cached locally — safe to refresh</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  SUPABASE CONFIG (reemplaza con tus credenciales)
+// ============================================================
+const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function sendTrial(trial) {
+  try {
+    await _supabase.from('simon_trials').insert({
+      participant_id: participantId,
+      group: group,
+      trial: trial.trialIndex,
+      direction: trial.direction,
+      position: trial.position,
+      response: trial.response,
+      rt_ms: trial.rt,
+      correct: trial.correct,
+      congruent: trial.congruent,
+      isi_jitter_ms: trial.jitter,
+      viewport: trial.viewport,
+      device_type: trial.deviceType,
+      timestamp: trial.timestamp
+    });
+  } catch(e) { console.warn('Supabase insert failed:', e); }
+}
+
+// ============================================================
+//  EXPERIMENT CONSTANTS
+// ============================================================
+const PRACTICE_TRIALS = 6;
+const MAIN_TRIALS = 40;
+let participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
+let group = null;
+let trials = [];
+let currentIdx = 0;
+let stimStart = 0;
+let waiting = false;
+let fixationTimer = null;
+
+// ============================================================
+//  TRIAL GENERATION (balanced: direction x position)
+// ============================================================
+function makeTrial(congruent, phase) {
+  const direction = Math.random() < 0.5 ? 'left' : 'right';
+  let position;
+  if (congruent) {
+    position = direction;  // same side as direction
+  } else {
+    position = (direction === 'left') ? 'right' : 'left';
+  }
+  const stimulusChar = (direction === 'left') ? '←' : '→';
+  return {
+    direction,
+    position,
+    stimulus: stimulusChar,
+    congruent,
+    phase,
+    rt: null,
+    correct: null,
+    response: null,
+    jitter: null,
+    viewport: null,
+    deviceType: null,
+    timestamp: null,
+    trialIndex: null
+  };
+}
+
+function buildTrials() {
+  let list = [];
+  // Practice (all congruent)
+  for (let i = 0; i < PRACTICE_TRIALS; i++) list.push(makeTrial(true, 'practice'));
+  // Main: 50% congruent, 50% incongruent
+  const half = MAIN_TRIALS / 2;
+  for (let i = 0; i < half; i++) list.push(makeTrial(true, 'main'));
+  for (let i = 0; i < half; i++) list.push(makeTrial(false, 'main'));
+  // Shuffle
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
+}
+
+// ============================================================
+//  TASK FLOW
+// ============================================================
+function startCoreTask() {
+  trials = buildTrials();
+  currentIdx = 0;
+  showScreen('screen-task');
+  nextTrial();
+}
+
+function nextTrial() {
+  if (currentIdx >= trials.length) {
+    finishTask();
+    return;
+  }
+  const trial = trials[currentIdx];
+  const total = trials.length;
+  document.getElementById('progressBar').style.width = (currentIdx / total * 100) + '%';
+  document.getElementById('trialCounter').innerHTML = `Trial ${currentIdx+1} / ${total}`;
+  const isPractice = trial.phase === 'practice';
+  document.getElementById('phaseLabel').innerText = isPractice ? 'Practice' : 'Main Study';
+  document.getElementById('phaseDesc').innerText = isPractice ? 'Congruent warm-up' : (trial.congruent ? 'Congruent' : 'Incongruent');
+  
+  setResponseState(false);
+  waiting = false;
+  document.getElementById('fixation').style.display = 'block';
+  document.getElementById('stimulus').style.display = 'none';
+  
+  const jitter = Math.round(Math.random() * 400 + 400);
+  if (trial.phase === 'main') trial.jitter = jitter;
+  if (fixationTimer) clearTimeout(fixationTimer);
+  fixationTimer = setTimeout(() => {
+    document.getElementById('fixation').style.display = 'none';
+    const el = document.getElementById('stimulus');
+    el.textContent = trial.stimulus;
+    // Apply position class for horizontal shift
+    el.classList.remove('left-pos', 'right-pos');
+    if (trial.position === 'left') el.classList.add('left-pos');
+    else if (trial.position === 'right') el.classList.add('right-pos');
+    el.style.display = 'block';
+    stimStart = performance.now();
+    setResponseState(true);
+    waiting = true;
+  }, jitter);
+}
+
+function setResponseState(active) {
+  document.querySelectorAll('.resp-btn').forEach(btn => btn.disabled = !active);
+  waiting = active;
+}
+
+function respond(direction) {
+  if (!waiting) return;
+  let rt = Math.round(performance.now() - stimStart);
+  const trial = trials[currentIdx];
+  const correct = (direction === trial.direction);
+  
+  // Visual feedback
+  const flash = document.getElementById('feedbackFlash');
+  flash.className = 'feedback-flash ' + (correct ? 'correct' : 'wrong');
+  setTimeout(() => flash.className = 'feedback-flash', 200);
+  
+  // RT validation (200-2000 ms)
+  if (rt < 200 || rt > 2000) {
+    document.getElementById('rtTicker').innerHTML = `⚠️ Respuesta demasiado rápida/lenta (${rt} ms) — repite`;
+    setTimeout(() => {
+      waiting = false;
+      setResponseState(false);
+      // Re-show same stimulus
+      document.getElementById('fixation').style.display = 'none';
+      const el = document.getElementById('stimulus');
+      el.textContent = trial.stimulus;
+      el.classList.remove('left-pos', 'right-pos');
+      if (trial.position === 'left') el.classList.add('left-pos');
+      else if (trial.position === 'right') el.classList.add('right-pos');
+      el.style.display = 'block';
+      stimStart = performance.now();
+      setResponseState(true);
+      waiting = true;
+    }, 800);
+    return;
+  }
+  
+  document.getElementById('rtTicker').innerHTML = rt + ' ms';
+  
+  if (trial.phase === 'main') {
+    trial.rt = rt;
+    trial.correct = correct;
+    trial.response = direction;
+    trial.timestamp = new Date().toISOString();
+    trial.viewport = `${window.innerWidth}x${window.innerHeight}`;
+    trial.deviceType = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
+    trial.trialIndex = currentIdx + 1;
+    try { localStorage.setItem('simon_session', JSON.stringify({ participantId, group, trials })); } catch(e) {}
+    sendTrial(trial);
+  }
+  currentIdx++;
+  setTimeout(() => nextTrial(), 280);
+}
+
+function finishTask() {
+  buildResults();
+  showScreen('screen-results');
+}
+
+// ============================================================
+//  PRIMING (for experimental group)
+// ============================================================
+function runPriming() {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('primingOverlay');
+    const msgDiv = document.getElementById('primingMsg');
+    const subDiv = document.getElementById('primingSub');
+    const fillDiv = document.getElementById('primingFill');
+    const steps = [
+      { msg: "🧠 FOCUS ATTENTION", sub: "Prepare cognitive resources" },
+      { msg: "⚡ IGNORE POSITION", sub: "Only arrow direction matters" },
+      { msg: "🎯 READY", sub: "Simon task begins" }
+    ];
+    overlay.classList.add('active');
+    let stepIdx = 0;
+    function showStep() {
+      if (stepIdx >= steps.length) {
+        overlay.classList.remove('active');
+        resolve();
+        return;
+      }
+      msgDiv.innerText = steps[stepIdx].msg;
+      subDiv.innerText = steps[stepIdx].sub;
+      fillDiv.style.width = '0%';
+      let startTime = Date.now();
+      const duration = 1500;
+      const interval = setInterval(() => {
+        let elapsed = Date.now() - startTime;
+        let percent = Math.min(100, (elapsed / duration) * 100);
+        fillDiv.style.width = percent + '%';
+        if (elapsed >= duration) {
+          clearInterval(interval);
+          stepIdx++;
+          showStep();
+        }
+      }, 20);
+    }
+    showStep();
+  });
+}
+
+async function startStudy() {
+  if (!group) return;
+  if (group === 'experimental') {
+    await runPriming();
+    startCoreTask();
+  } else {
+    startCoreTask();
+  }
+}
+
+// ============================================================
+//  STATISTICS & RESULTS
+// ============================================================
+function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+function std(arr) { if(arr.length<2) return 0; let m=mean(arr); return Math.sqrt(arr.reduce((s,x)=>s+(x-m)**2,0)/(arr.length-1)); }
+function cohensD(a,b) { let sp = Math.sqrt(((a.length-1)*std(a)**2+(b.length-1)*std(b)**2)/(a.length+b.length-2)); return sp===0?0:(mean(a)-mean(b))/sp; }
+function welchTSatterthwaite(a, b) {
+  const n1=a.length, n2=b.length;
+  if(n1<2||n2<2) return {tStat:0, df:0};
+  const v1=std(a)**2, v2=std(b)**2;
+  const se = Math.sqrt(v1/n1 + v2/n2);
+  if(se===0) return {tStat:0, df:n1+n2-2};
+  const tStat = (mean(a)-mean(b)) / se;
+  const df = Math.pow(v1/n1 + v2/n2, 2) / (Math.pow(v1/n1, 2)/(n1-1) + Math.pow(v2/n2, 2)/(n2-1));
+  return { tStat, df: Math.round(df * 10) / 10 };
+}
+function approxP(t, df) {
+  const absT=Math.abs(t);
+  if(df<3) return '> .05 (n.s.)';
+  if(absT>3.5) return '< .001';
+  if(absT>2.6) return '< .01';
+  if(absT>(df<20?2.1:1.96)) return '< .05';
+  return '> .05 (n.s.)';
+}
+
+function buildResults() {
+  const mainTrials = trials.filter(t => t.phase === 'main' && t.rt !== undefined);
+  const validCong = mainTrials.filter(t => t.congruent && t.correct && t.rt >= 200 && t.rt <= 2000).map(t=>t.rt);
+  const validIncong = mainTrials.filter(t => !t.congruent && t.correct && t.rt >= 200 && t.rt <= 2000).map(t=>t.rt);
+  const totalValid = validCong.length + validIncong.length;
+  const mC = mean(validCong), mI = mean(validIncong);
+  const sdC = std(validCong), sdI = std(validIncong);
+  const delta = mI - mC;
+  const d = cohensD(validIncong, validCong);
+  const { tStat, df } = welchTSatterthwaite(validIncong, validCong);
+  const pVal = approxP(tStat, df);
+  const effectSizeDesc = Math.abs(d) > 0.8 ? 'large' : (Math.abs(d) > 0.5 ? 'medium' : 'small');
+  const accTotal = mainTrials.filter(t=>t.correct).length / mainTrials.length * 100;
+  const accCong = mainTrials.filter(t=>t.congruent && t.correct).length / Math.max(1, mainTrials.filter(t=>t.congruent).length) * 100;
+  const accIncong = mainTrials.filter(t=>!t.congruent && t.correct).length / Math.max(1, mainTrials.filter(t=>!t.congruent).length) * 100;
+  
+  document.getElementById('resultsMeta').innerHTML = `Group: ${group} · Valid trials (RT 200-2000ms): ${totalValid} · Satterthwaite df = ${df.toFixed(1)} · ${new Date().toLocaleDateString()}`;
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Mean Congruent</div><div class="stat-value accent3">${Math.round(mC)}ms</div></div>
+    <div class="stat-card"><div class="stat-label">Mean Incongruent</div><div class="stat-value accent2">${Math.round(mI)}ms</div></div>
+    <div class="stat-card"><div class="stat-label">Simon Effect</div><div class="stat-value accent">${Math.round(delta)}ms</div></div>
+    <div class="stat-card"><div class="stat-label">Cohen's d</div><div class="stat-value">${d.toFixed(3)}</div></div>
+    <div class="stat-card"><div class="stat-label">t(${df.toFixed(1)})</div><div class="stat-value">${tStat.toFixed(3)}</div></div>
+    <div class="stat-card"><div class="stat-label">Accuracy</div><div class="stat-value">${accTotal.toFixed(1)}%</div></div>`;
+  
+  const congTable = document.getElementById('congTable');
+  while(congTable.rows.length>1) congTable.deleteRow(1);
+  const addRow = (label, n, meanRt, sdRt, acc) => { let r=congTable.insertRow(); r.insertCell(0).innerText=label; r.insertCell(1).innerText=n; r.insertCell(2).innerText=meanRt.toFixed(1); r.insertCell(3).innerText=sdRt.toFixed(1); r.insertCell(4).innerText=acc.toFixed(1)+'%'; };
+  addRow('Congruent', validCong.length, mC, sdC, accCong);
+  addRow('Incongruent', validIncong.length, mI, sdI, accIncong);
+  
+  const logDiv = document.getElementById('trialLog'); logDiv.innerHTML = '';
+  mainTrials.forEach((t,i) => {
+    const isOutlier = t.rt && (t.rt < 200 || t.rt > 2000);
+    const row = document.createElement('div'); row.className='trial-row';
+    const dirSymbol = t.direction === 'left' ? '←' : '→';
+    const posSymbol = t.position === 'left' ? '← (L)' : '→ (R)';
+    row.innerHTML = `<span>${i+1}</span><span>${dirSymbol}</span><span>${posSymbol}</span><span style="color:${t.correct?'var(--success)':'var(--danger)'}">${t.response||'—'}</span><span style="color:${isOutlier?'var(--muted)':''}">${t.rt||'—'}${isOutlier?' ⚠':''}</span><span class="${t.correct?'correct-dot':'wrong-dot'}">${t.correct?'✓':'✗'}</span>`;
+    logDiv.appendChild(row);
+  });
+  
+  const effectLang = effectSizeDesc === 'large' ? 'large' : (effectSizeDesc==='medium' ? 'medium' : 'small');
+  const paperText = `RESULTS\nParticipant group: ${group}. Valid trials: ${totalValid} (correct RT 200–2000 ms, outliers excluded).\nCongruent (direction = position): M = ${mC.toFixed(1)} ms (SD = ${sdC.toFixed(1)}), Incongruent (direction ≠ position): M = ${mI.toFixed(1)} ms (SD = ${sdI.toFixed(1)}).\nSimon effect = ${delta.toFixed(1)} ms. Welch t(${df.toFixed(1)}) = ${tStat.toFixed(3)}, p ${pVal}, Cohen's d = ${d.toFixed(3)} (${effectLang} effect).\nAccuracy: total ${accTotal.toFixed(1)}%, congruent ${accCong.toFixed(1)}%, incongruent ${accIncong.toFixed(1)}%.\nNote: Degrees of freedom estimated via Satterthwaite equation.`;
+  document.getElementById('paperText').innerText = paperText;
+  
+  drawCharts(mainTrials, validCong, validIncong);
+}
+
+function drawCharts(allTrials, congRTs, incongRTs) {
+  const canvas = document.getElementById('rtChart');
+  const W = canvas.offsetWidth || 700; canvas.width = W*2; canvas.height=400; canvas.style.width=W+'px'; canvas.style.height='200px';
+  const ctx = canvas.getContext('2d'); ctx.scale(2,2);
+  const rts = allTrials.filter(t=>t.rt).map(t=>t.rt);
+  if(!rts.length) return;
+  const maxRT=Math.max(...rts, 500), minRT=Math.min(...rts, 200);
+  const pad={l:48,r:16,t:16,b:32}, cw=W-pad.l-pad.r, ch=200-pad.t-pad.b;
+  ctx.clearRect(0,0,W,200); ctx.strokeStyle='#2a2a2a'; ctx.lineWidth=1;
+  for(let f of [0,0.5,1]){ let y=pad.t+ch*(1-f); ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cw,y); ctx.stroke(); ctx.fillStyle='#555'; ctx.fillText(Math.round(minRT+f*(maxRT-minRT)), 2, y+4); }
+  ctx.beginPath();
+  let validTrials = allTrials.filter(t=>t.rt);
+  validTrials.forEach((t,i)=>{ let x=pad.l+(i/(validTrials.length-1||1))*cw, y=pad.t+ch*(1-(t.rt-minRT)/(maxRT-minRT||1)); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+  ctx.strokeStyle='rgba(232,255,74,0.6)'; ctx.lineWidth=1.5; ctx.stroke();
+  validTrials.forEach((t,i)=>{ let x=pad.l+(i/(validTrials.length-1||1))*cw, y=pad.t+ch*(1-(t.rt-minRT)/(maxRT-minRT||1)); ctx.beginPath(); ctx.arc(x,y,t.correct?3:5,0,Math.PI*2); ctx.fillStyle=!t.correct?'#ff0000':(t.congruent?'#4affda':'#ff4a6e'); ctx.fill(); if(!t.correct){ ctx.strokeStyle='rgba(255,0,0,0.5)'; ctx.beginPath(); ctx.arc(x,y,9,0,Math.PI*2); ctx.stroke(); } });
+  
+  const distCanvas = document.getElementById('distChart'); const DW=distCanvas.offsetWidth||700; distCanvas.width=DW*2; distCanvas.height=360; distCanvas.style.width=DW+'px'; distCanvas.style.height='180px';
+  const dctx = distCanvas.getContext('2d'); dctx.scale(2,2);
+  const allVals = [...congRTs,...incongRTs]; if(allVals.length<2) return;
+  const bins=16, minV=Math.min(...allVals), maxV=Math.max(...allVals), bw=(maxV-minV)/bins;
+  let binC=new Array(bins).fill(0), binI=new Array(bins).fill(0);
+  congRTs.forEach(v=>{ let b=Math.min(Math.floor((v-minV)/bw),bins-1); binC[b]++; });
+  incongRTs.forEach(v=>{ let b=Math.min(Math.floor((v-minV)/bw),bins-1); binI[b]++; });
+  const maxBin=Math.max(...binC,...binI,1);
+  const dpad={l:8,r:8,t:8,b:32}, dcw=DW-dpad.l-dpad.r, dch=180-dpad.t-dpad.b, barW=dcw/bins/2-1;
+  for(let i=0;i<bins;i++){ let x=dpad.l+(dcw/bins)*i; let hC=(binC[i]/maxBin)*dch; let hI=(binI[i]/maxBin)*dch; dctx.fillStyle='rgba(74,255,218,0.7)'; dctx.fillRect(x,dpad.t+dch-hC,barW,hC); dctx.fillStyle='rgba(255,74,110,0.7)'; dctx.fillRect(x+barW+1,dpad.t+dch-hI,barW,hI); }
+  dctx.fillStyle='#555'; dctx.font='10px Space Mono'; [0,0.5,1].forEach(f=>dctx.fillText(Math.round(minV+f*(maxV-minV))+'ms', dpad.l+f*dcw-12, 180-4));
+}
+
+// ============================================================
+//  EXPORT & RESET
+// ============================================================
+function exportCSV() {
+  const main = trials.filter(t=>t.phase==='main' && t.rt!==undefined);
+  let csv = "participant_id,group,date,trial,direction,position,response,rt_ms,correct,congruent,isi_jitter_ms,viewport,device_type,timestamp\n";
+  main.forEach((t,i)=>csv+=`${participantId},${group},${new Date().toISOString().slice(0,10)},${i+1},${t.direction},${t.position},${t.response||'NA'},${t.rt||''},${t.correct?1:0},${t.congruent?1:0},${t.jitter||''},${t.viewport||''},${t.deviceType||''},${t.timestamp||''}\n`);
+  const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`simon_${participantId}.csv`; a.click();
+}
+function exportJSON() {
+  const main = trials.filter(t=>t.phase==='main' && t.rt!==undefined);
+  const payload = { meta: { participantId, group, exportedAt: new Date().toISOString(), totalTrials: main.length, validTrials: main.filter(t=>t.correct && t.rt>=200 && t.rt<=2000).length }, trials: main };
+  const blob=new Blob([JSON.stringify(payload, null, 2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`simon_${participantId}.json`; a.click();
+}
+function resetStudy() { try { localStorage.removeItem('simon_session'); } catch(e) {} location.reload(); }
+
+// ============================================================
+//  SESSION RESTORE
+// ============================================================
+function checkSavedSession() {
+  try {
+    const saved = localStorage.getItem('simon_session');
+    if (!saved) return;
+    const data = JSON.parse(saved);
+    const done = (data.trials||[]).filter(t=>t.phase==='main' && t.rt!==undefined).length;
+    if (done < 3) { localStorage.removeItem('simon_session'); return; }
+    if (confirm('Unsaved session found. Resume?')) {
+      participantId = data.participantId;
+      group = data.group;
+      trials = data.trials;
+      document.getElementById('pidDisplay').innerText = participantId;
+      buildResults();
+      showScreen('screen-results');
+    } else {
+      localStorage.removeItem('simon_session');
+    }
+  } catch(e) {}
+}
+
+// ============================================================
+//  UI HELPERS
+// ============================================================
+function regenerateID() { participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase(); document.getElementById('pidDisplay').innerText = participantId; }
+function selectGroup(g) { group = g; document.getElementById('btn-exp').classList.toggle('selected', g==='experimental'); document.getElementById('btn-ctrl').classList.toggle('selected', g==='control'); document.getElementById('startBtn').disabled = false; }
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+window.addEventListener('resize', () => {
+  if (document.getElementById('screen-results').classList.contains('active')) {
+    const mainTrials = trials.filter(t => t.phase === 'main' && t.rt !== undefined);
+    const validCong = mainTrials.filter(t => t.congruent && t.correct && t.rt >= 200 && t.rt <= 2000).map(t=>t.rt);
+    const validIncong = mainTrials.filter(t => !t.congruent && t.correct && t.rt >= 200 && t.rt <= 2000).map(t=>t.rt);
+    drawCharts(mainTrials, validCong, validIncong);
+  }
+});
+
+document.getElementById('pidDisplay').innerText = participantId;
+checkSavedSession();
+</script>
+</body>
+</html>
