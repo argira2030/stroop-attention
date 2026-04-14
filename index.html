@@ -11,24 +11,19 @@
 :root {
   --bg: #0a0a0a;
   --surface: #111111;
-  --surface2: #1a1a1a;
   --border: #2a2a2a;
   --text: #f0f0f0;
   --muted: #666;
   --accent: #e8ff4a;
   --accent2: #ff4a6e;
   --accent3: #4affda;
-  --danger: #ff4a6e;
-  --success: #4affda;
   --red: #ff4a6e;
   --blue: #4a9eff;
   --green: #4affda;
   --yellow: #e8ff4a;
   --purple: #c47aff;
 }
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 body {
   font-family: 'Space Mono', monospace;
   background: var(--bg);
@@ -36,175 +31,49 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
 }
-
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(232,255,74,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(232,255,74,0.03) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(232,255,74,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(232,255,74,0.03) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
   z-index: 0;
 }
-
-.screen {
-  display: none;
-  min-height: 100vh;
-  position: relative;
-  z-index: 1;
-}
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
 .screen.active { display: flex; flex-direction: column; }
-
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 32px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(10,10,10,0.8);
-  backdrop-filter: blur(10px);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 32px; border-bottom: 1px solid var(--border);
+  background: rgba(10,10,10,0.8); backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 100;
 }
-
-.logo {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 14px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
-.badge {
-  font-size: 10px;
-  letter-spacing: 0.15em;
-  color: var(--muted);
-  text-transform: uppercase;
-  border: 1px solid var(--border);
-  padding: 4px 10px;
-  border-radius: 2px;
-}
-
-#screen-intro {
-  justify-content: center;
-  align-items: center;
-  padding: 40px 32px;
-}
-
-.intro-content {
-  max-width: 600px;
-  width: 100%;
-  animation: fadeUp 0.6s ease both;
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.intro-tag {
-  font-size: 10px;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 16px;
-}
-
-.intro-title {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(32px, 5vw, 52px);
-  font-weight: 800;
-  line-height: 1.05;
-  margin-bottom: 24px;
-}
-
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+.badge { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; border: 1px solid var(--border); padding: 4px 10px; border-radius: 2px; }
+#screen-intro { justify-content: center; align-items: center; padding: 40px 32px; }
+.intro-content { max-width: 600px; width: 100%; animation: fadeUp 0.6s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.intro-tag { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+.intro-title { font-family: 'Syne', sans-serif; font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.05; margin-bottom: 24px; }
 .intro-title span { color: var(--accent); }
 .intro-desc { font-size: 13px; line-height: 1.8; color: #aaa; margin-bottom: 32px; }
-
-.ethics-box {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  padding: 16px 20px;
-  border-radius: 4px;
-  font-size: 11px;
-  color: var(--muted);
-  line-height: 1.7;
-  margin-bottom: 32px;
-}
+.ethics-box { border: 1px solid var(--border); background: var(--surface); padding: 16px 20px; border-radius: 4px; font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 32px; }
 .ethics-box strong { color: var(--accent3); display: block; margin-bottom: 4px; letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px; }
-
-.group-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.group-btn {
-  padding: 20px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-  font-family: 'Space Mono', monospace;
-  font-size: 12px;
-  text-align: left;
-  border-radius: 4px;
-  transition: all 0.2s;
-  position: relative;
-  overflow: hidden;
-}
-
-.group-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
+.group-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.group-btn { padding: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; font-family: 'Space Mono', monospace; font-size: 12px; text-align: left; border-radius: 4px; transition: all 0.2s; position: relative; overflow: hidden; }
+.group-btn::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; }
 .group-btn.experimental::before { background: linear-gradient(135deg, rgba(232,255,74,0.08), transparent); }
-.group-btn.control::before      { background: linear-gradient(135deg, rgba(74,255,218,0.08), transparent); }
+.group-btn.control::before { background: linear-gradient(135deg, rgba(74,255,218,0.08), transparent); }
 .group-btn:hover::before, .group-btn.selected::before { opacity: 1; }
 .group-btn.selected.experimental { border-color: var(--accent); }
-.group-btn.selected.control      { border-color: var(--accent3); }
-.group-btn .g-label {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 15px;
-  margin-bottom: 4px;
-  display: block;
-}
+.group-btn.selected.control { border-color: var(--accent3); }
+.group-btn .g-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 4px; display: block; }
 .group-btn.experimental .g-label { color: var(--accent); }
-.group-btn.control .g-label      { color: var(--accent3); }
+.group-btn.control .g-label { color: var(--accent3); }
 .group-btn .g-desc { color: var(--muted); font-size: 10px; line-height: 1.5; }
-
-.btn-primary {
-  width: 100%;
-  padding: 16px;
-  background: var(--accent);
-  color: #000;
-  border: none;
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 14px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: opacity 0.2s;
-}
+.btn-primary { width: 100%; padding: 16px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 4px; transition: opacity 0.2s; }
 .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
-
-/* TASK */
-#screen-task {
-  align-items: center;
-  justify-content: center;
-  padding: 40px 32px;
-}
+#screen-task { align-items: center; justify-content: center; padding: 40px 32px; }
 .task-wrapper { max-width: 700px; width: 100%; }
 .progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 32px; overflow: hidden; }
 .progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
@@ -225,8 +94,6 @@ body::before {
 .feedback-flash.correct { background: rgba(74,255,218,0.07); opacity: 1; }
 .feedback-flash.wrong { background: rgba(255,74,110,0.07); opacity: 1; }
 .rt-ticker { position: fixed; top: 80px; right: 32px; font-size: 11px; color: var(--muted); font-family: monospace; }
-
-/* RESULTS */
 #screen-results { padding: 40px 32px; align-items: center; }
 .results-content { max-width: 800px; width: 100%; }
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 32px; }
@@ -241,7 +108,7 @@ body::before {
 .cong-table th { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
 .chart-section { background: var(--surface); border: 1px solid var(--border); padding: 24px; border-radius: 4px; margin-bottom: 24px; }
 .chart-title { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
-canvas { display: block; width: 100%; height: auto; background: transparent; }
+canvas { display: block; width: 100%; height: auto; }
 .trial-log { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 24px; overflow: hidden; }
 .trial-log-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
 .trial-log-body { max-height: 200px; overflow-y: auto; font-size: 11px; }
@@ -259,113 +126,30 @@ canvas { display: block; width: 100%; height: auto; background: transparent; }
 .btn-outline { flex: 1; min-width: 140px; padding: 14px; background: transparent; color: var(--text); border: 1px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
 .lang-btn { padding: 4px 10px; background: transparent; border: 1px solid var(--border); color: var(--muted); font-size: 10px; cursor: pointer; border-radius: 2px; }
 .lang-btn.active, .lang-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-/* PRIMING OVERLAY */
-.priming-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.92);
-  backdrop-filter: blur(12px);
-  z-index: 300;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Syne', sans-serif;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease;
-}
-.priming-overlay.active {
-  opacity: 1;
-  visibility: visible;
-}
-.priming-card {
-  max-width: 500px;
-  background: var(--surface);
-  border: 1px solid var(--accent);
-  padding: 40px 32px;
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 20px 35px rgba(0,0,0,0.5);
-}
+.priming-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(12px); z-index: 300; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; opacity: 0; visibility: hidden; transition: opacity 0.3s ease; }
+.priming-overlay.active { opacity: 1; visibility: visible; }
+.priming-card { max-width: 500px; background: var(--surface); border: 1px solid var(--accent); padding: 40px 32px; border-radius: 12px; text-align: center; box-shadow: 0 20px 35px rgba(0,0,0,0.5); }
 .priming-icon { font-size: 48px; margin-bottom: 20px; }
 .priming-message { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 16px; color: var(--accent); }
 .priming-sub { font-size: 13px; color: var(--muted); font-family: monospace; }
 .priming-progress { margin-top: 28px; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
 .priming-progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.2s linear; }
 
-/* ============================================
-   RESPONSIVE FIXES para móvil (resultados)
-   ============================================ */
 @media (max-width: 680px) {
-  #screen-results {
-    padding: 20px 16px !important;
-  }
-  .results-content {
-    padding: 0 !important;
-  }
-  .stats-grid {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
-  }
-  .stat-value {
-    font-size: 24px !important;
-  }
-  .chart-section {
-    padding: 12px !important;
-    overflow-x: auto !important;
-  }
-  .cong-table {
-    font-size: 10px !important;
-    min-width: 400px;
-  }
-  .cong-table th, .cong-table td {
-    padding: 8px 10px !important;
-  }
-  .trial-row {
-    grid-template-columns: 30px 50px 50px 50px 70px 50px 40px !important;
-    font-size: 9px !important;
-    gap: 4px !important;
-    padding: 6px 8px !important;
-  }
-  .trial-row.header {
-    font-size: 8px !important;
-  }
-  canvas {
-    width: 100% !important;
-    height: auto !important;
-  }
-  .paper-text {
-    font-size: 10px !important;
-    line-height: 1.5 !important;
-  }
-  .action-row {
-    flex-direction: column;
-    gap: 8px;
-  }
-  .btn-export, .btn-outline {
-    min-width: auto;
-    width: 100%;
-  }
-  .header {
-    padding: 12px 16px !important;
-  }
-  .logo {
-    font-size: 12px !important;
-  }
-  .badge {
-    font-size: 8px !important;
-    padding: 3px 6px !important;
-  }
-  .rt-ticker {
-    top: auto;
-    bottom: 16px;
-    right: 16px;
-    background: rgba(0,0,0,0.7);
-    padding: 4px 8px;
-    border-radius: 20px;
-    font-size: 10px;
-  }
+  #screen-results { padding: 20px 16px !important; }
+  .stats-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+  .stat-value { font-size: 24px !important; }
+  .chart-section { padding: 12px !important; overflow-x: auto !important; }
+  .cong-table { font-size: 10px !important; min-width: 400px; }
+  .trial-row { grid-template-columns: 30px 50px 50px 50px 70px 50px 40px !important; font-size: 9px !important; gap: 4px !important; padding: 6px 8px !important; }
+  canvas { width: 100% !important; height: auto !important; }
+  .paper-text { font-size: 10px !important; line-height: 1.5 !important; }
+  .action-row { flex-direction: column; gap: 8px; }
+  .btn-export, .btn-outline { min-width: auto; width: 100%; }
+  .header { padding: 12px 16px !important; }
+  .logo { font-size: 12px !important; }
+  .badge { font-size: 8px !important; padding: 3px 6px !important; }
+  .rt-ticker { top: auto; bottom: 16px; right: 16px; background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 20px; font-size: 10px; }
 }
 </style>
 </head>
@@ -381,16 +165,15 @@ canvas { display: block; width: 100%; height: auto; background: transparent; }
   </div>
 </div>
 
-<!-- SESSION RESTORE BANNER -->
 <div id="restoreBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:400;background:var(--surface);border-top:1px solid var(--accent);padding:14px 32px;display:none;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-  <span style="font-size:11px;color:var(--accent);letter-spacing:0.1em;">// UNSAVED SESSION DETECTED — Resume where you left off?</span>
+  <span style="font-size:11px;color:var(--accent);letter-spacing:0.1em;">// UNSAVED SESSION — Resume?</span>
   <div style="display:flex;gap:10px;">
-    <button onclick="restoreSession()" style="background:var(--accent);color:#000;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;padding:8px 16px;cursor:pointer;border-radius:2px;">RESTORE SESSION</button>
+    <button onclick="restoreSession()" style="background:var(--accent);color:#000;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;padding:8px 16px;cursor:pointer;border-radius:2px;">RESTORE</button>
     <button onclick="dismissRestore()" style="background:transparent;color:var(--muted);border:1px solid var(--border);font-family:'Syne',sans-serif;font-size:11px;padding:8px 16px;cursor:pointer;border-radius:2px;">DISCARD</button>
   </div>
 </div>
 
-<!-- INTRO SCREEN -->
+<!-- INTRO -->
 <div class="screen active" id="screen-intro">
   <div class="header">
     <div class="logo">Stroop · HCI</div>
@@ -420,7 +203,7 @@ canvas { display: block; width: 100%; height: auto; background: transparent; }
   </div>
 </div>
 
-<!-- TASK SCREEN -->
+<!-- TASK -->
 <div class="screen" id="screen-task">
   <div class="header"><div class="logo">Stroop · HCI</div><div style="display:flex;gap:10px;"><div class="badge" id="phaseLabel">Practice</div></div></div>
   <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:32px 24px;">
@@ -441,7 +224,7 @@ canvas { display: block; width: 100%; height: auto; background: transparent; }
   <div class="rt-ticker" id="rtTicker"></div>
 </div>
 
-<!-- RESULTS SCREEN -->
+<!-- RESULTS -->
 <div class="screen" id="screen-results">
   <div class="header"><div class="logo">Stroop · HCI</div><div class="badge">Analysis Complete</div></div>
   <div style="padding:40px 32px; display:flex; justify-content:center;">
@@ -464,9 +247,6 @@ canvas { display: block; width: 100%; height: auto; background: transparent; }
 </div>
 
 <script>
-// --------------------------------------------------------------
-//  SUPABASE INIT
-// --------------------------------------------------------------
 const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -474,28 +254,15 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 async function sendTrial(trial) {
   try {
     await _supabase.from('stroop_trials').insert({
-      participant_id: participantId,
-      cohort: group,
-      trial: trial.trialIndex,
-      word: trial.word,
-      ink: trial.ink,
-      response: trial.response || null,
-      rt: trial.rt || null,
-      correct: trial.correct,
-      congruent: trial.congruent,
-      isi_jitter_ms: trial.jitter || null,
-      viewport: trial.viewport || null,
-      device_type: trial.deviceType || null,
-      timestamp: trial.timestamp || new Date().toISOString()
+      participant_id: participantId, cohort: group, trial: trial.trialIndex,
+      word: trial.word, ink: trial.ink, response: trial.response || null,
+      rt: trial.rt || null, correct: trial.correct, congruent: trial.congruent,
+      isi_jitter_ms: trial.jitter || null, viewport: trial.viewport || null,
+      device_type: trial.deviceType || null, timestamp: trial.timestamp || new Date().toISOString()
     });
-  } catch(e) {
-    console.warn('Supabase send failed (local data safe):', e);
-  }
+  } catch(e) { console.warn(e); }
 }
 
-// --------------------------------------------------------------
-//  i18n + language
-// --------------------------------------------------------------
 const LANG = {
   en: { badge_protocol:"Priming Protocol v5.0", tag:"// Attention Priming Study", desc:"Cognitive task with group separation.", ethics_title:"⚖ Ethical", ethics_body:"No tracking. Local only.", group_label:"Select group", group_exp:"Experimental", group_exp_desc:"Structured priming before main task", group_ctrl:"Control", group_ctrl_desc:"Direct cognitive task", start_btn:"Begin Study →", ink_question:"What is the INK COLOR?", results_title:"Results", cond_cong:"Congruent", cond_incong:"Incongruent", paper: (g,n,mC,sdC,mI,sdI,delta,d,t,df,p,accTot,accC,accI,eff)=> `RESULTS\nParticipant group: ${g}. Valid trials: ${n} (correct RT 200–2000 ms, outliers excluded).\nCongruent: M = ${mC} ms (SD = ${sdC}), Incongruent: M = ${mI} ms (SD = ${sdI}).\nStroop effect = ${delta} ms. Welch t(${df}) = ${t}, p ${p}, Cohen's d = ${d} (${eff} effect).\nAccuracy: total ${accTot}%, congruent ${accC}%, incongruent ${accI}%.\nNote: Degrees of freedom estimated via Satterthwaite equation; stimuli counterbalanced across ink colors.` },
   es: { badge_protocol:"Protocolo Priming v5.0", tag:"// Estudio de Atención con Priming", desc:"Tarea cognitiva con separación de grupos.", ethics_title:"⚖ Ético", ethics_body:"Sin rastreo. Solo local.", group_label:"Selecciona grupo", group_exp:"Experimental", group_exp_desc:"Priming estructurado antes de la tarea", group_ctrl:"Control", group_ctrl_desc:"Tarea cognitiva directa", start_btn:"Comenzar Estudio →", ink_question:"¿Color de la TINTA?", results_title:"Resultados", cond_cong:"Congruente", cond_incong:"Incongruente", paper: (g,n,mC,sdC,mI,sdI,delta,d,t,df,p,accTot,accC,accI,eff)=> `RESULTADOS\nGrupo: ${g}. Ensayos válidos: ${n} (TR correctos 200–2000 ms, valores atípicos excluidos).\nCongruente: M = ${mC} ms (DE = ${sdC}), Incongruente: M = ${mI} ms (DE = ${sdI}).\nEfecto Stroop = ${delta} ms. t de Welch(${df}) = ${t}, p ${p}, d de Cohen = ${d} (efecto ${eff}).\nPrecisión total ${accTot}%, congruente ${accC}%, incongruente ${accI}%.\nNota: Grados de libertad estimados por ecuación de Satterthwaite; estímulos contrabalanceados por color de tinta.` }
@@ -504,9 +271,6 @@ let currentLang = 'en';
 function setLang(lang) { currentLang = lang; document.querySelectorAll('[data-i18n]').forEach(el => { let k = el.getAttribute('data-i18n'); if(LANG[lang][k]) el.innerText = LANG[lang][k]; }); document.getElementById('stageLabel').innerText = LANG[lang].ink_question; document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active')); document.querySelectorAll(`#lang${lang.toUpperCase()}, #lang${lang.toUpperCase()}2, #lang${lang.toUpperCase()}3`).forEach(btn => btn?.classList.add('active')); }
 function t(key) { return LANG[currentLang][key] || LANG.en[key] || key; }
 
-// --------------------------------------------------------------
-//  Constants & Helpers
-// --------------------------------------------------------------
 const COLORS = ['red','blue','green','yellow','purple'];
 const COLOR_HEX = { red:'#ff4a6e', blue:'#4a9eff', green:'#4affda', yellow:'#e8ff4a', purple:'#c47aff' };
 const PRACTICE = 6, MAIN_TRIALS = 40;
@@ -518,7 +282,6 @@ function regenerateID() { participantId = generateUID(); document.getElementById
 function selectGroup(g) { group = g; document.getElementById('btn-exp').classList.toggle('selected', g==='experimental'); document.getElementById('btn-ctrl').classList.toggle('selected', g==='control'); document.getElementById('startBtn').disabled = false; }
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
-// Trial generation: practice all congruent, main 50/50 balanced
 function makeTrial(congruent, phase='main') {
   const ink = COLORS[Math.floor(Math.random() * COLORS.length)];
   const word = congruent ? ink : COLORS.filter(c => c !== ink)[Math.floor(Math.random() * 4)];
@@ -530,32 +293,17 @@ function buildTrials() {
   const halfPerCond = MAIN_TRIALS / 2;
   const repsPerColor = halfPerCond / COLORS.length;
   let main = [];
-  for(let c=0; c<COLORS.length; c++) {
-    for(let r=0; r<repsPerColor; r++) {
-      main.push({ word: COLORS[c], ink: COLORS[c], congruent: true, phase: 'main' });
-    }
-  }
+  for(let c=0; c<COLORS.length; c++) for(let r=0; r<repsPerColor; r++) main.push({ word: COLORS[c], ink: COLORS[c], congruent: true, phase: 'main' });
   for(let c=0; c<COLORS.length; c++) {
     const otherColors = COLORS.filter((_,i)=>i!==c);
-    for(let r=0; r<repsPerColor; r++) {
-      const word = otherColors[r % otherColors.length];
-      main.push({ word, ink: COLORS[c], congruent: false, phase: 'main' });
-    }
+    for(let r=0; r<repsPerColor; r++) main.push({ word: otherColors[r % otherColors.length], ink: COLORS[c], congruent: false, phase: 'main' });
   }
   for(let i=main.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [main[i],main[j]]=[main[j],main[i]]; }
   return list.concat(main);
 }
 
-// --------------------------------------------------------------
-//  CORE TASK
-// --------------------------------------------------------------
 let taskActive = false;
-function startCoreTask() {
-  trials = buildTrials();
-  currentIdx = 0;
-  showScreen('screen-task');
-  nextTrial();
-}
+function startCoreTask() { trials = buildTrials(); currentIdx = 0; showScreen('screen-task'); nextTrial(); }
 function nextTrial() {
   if (!trials || currentIdx >= trials.length) { finishTask(); return; }
   const trial = trials[currentIdx];
@@ -594,9 +342,7 @@ function respond(color) {
   setTimeout(() => flash.className = 'feedback-flash', 200);
   document.getElementById('rtTicker').innerHTML = rt + ' ms';
   if (trial.phase === 'main') {
-    trial.rt = rt;
-    trial.correct = correct;
-    trial.response = color;
+    trial.rt = rt; trial.correct = correct; trial.response = color;
     trial.timestamp = new Date().toISOString();
     trial.viewport = `${window.innerWidth}x${window.innerHeight}`;
     trial.deviceType = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
@@ -609,9 +355,6 @@ function respond(color) {
 }
 function finishTask() { buildResults(); showScreen('screen-results'); }
 
-// --------------------------------------------------------------
-//  PRIMING SEQUENCE
-// --------------------------------------------------------------
 function runPriming() {
   return new Promise((resolve) => {
     const overlay = document.getElementById('primingOverlay');
@@ -626,11 +369,7 @@ function runPriming() {
     overlay.classList.add('active');
     let stepIdx = 0;
     function showStep() {
-      if (stepIdx >= steps.length) {
-        overlay.classList.remove('active');
-        resolve();
-        return;
-      }
+      if (stepIdx >= steps.length) { overlay.classList.remove('active'); resolve(); return; }
       msgDiv.innerText = steps[stepIdx].msg;
       subDiv.innerText = steps[stepIdx].sub;
       fillDiv.style.width = '0%';
@@ -640,30 +379,14 @@ function runPriming() {
         let elapsed = Date.now() - startTime;
         let percent = Math.min(100, (elapsed / duration) * 100);
         fillDiv.style.width = percent + '%';
-        if (elapsed >= duration) {
-          clearInterval(interval);
-          stepIdx++;
-          showStep();
-        }
+        if (elapsed >= duration) { clearInterval(interval); stepIdx++; showStep(); }
       }, 20);
     }
     showStep();
   });
 }
+async function startStudy() { if (!group) return; if (group === 'experimental') { await runPriming(); startCoreTask(); } else { startCoreTask(); } }
 
-async function startStudy() {
-  if (!group) return;
-  if (group === 'experimental') {
-    await runPriming();
-    startCoreTask();
-  } else {
-    startCoreTask();
-  }
-}
-
-// --------------------------------------------------------------
-//  STATISTICS & OUTLIER FILTERING
-// --------------------------------------------------------------
 function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
 function std(arr) { if(arr.length<2) return 0; let m=mean(arr); return Math.sqrt(arr.reduce((s,x)=>s+(x-m)**2,0)/(arr.length-1)); }
 function cohensD(a,b) { let sp = Math.sqrt(((a.length-1)*std(a)**2+(b.length-1)*std(b)**2)/(a.length+b.length-2)); return sp===0?0:(mean(a)-mean(b))/sp; }
@@ -677,14 +400,7 @@ function welchTSatterthwaite(a, b) {
   const df = Math.pow(v1/n1 + v2/n2, 2) / (Math.pow(v1/n1, 2)/(n1-1) + Math.pow(v2/n2, 2)/(n2-1));
   return { tStat, df: Math.round(df * 10) / 10 };
 }
-function approxP(t, df) {
-  const absT=Math.abs(t);
-  if(df < 3) return '> .05 (n.s.)';
-  if(absT > 3.5) return '< .001';
-  if(absT > 2.6) return '< .01';
-  if(absT > (df < 20 ? 2.1 : 1.96)) return '< .05';
-  return '> .05 (n.s.)';
-}
+function approxP(t, df) { const absT=Math.abs(t); if(df<3) return '> .05 (n.s.)'; if(absT>3.5) return '< .001'; if(absT>2.6) return '< .01'; if(absT>(df<20?2.1:1.96)) return '< .05'; return '> .05 (n.s.)'; }
 
 function buildResults() {
   const mainTrials = trials.filter(t => t.phase === 'main' && t.rt !== undefined);
@@ -760,9 +476,6 @@ function drawCharts(allTrials, congRTs, incongRTs) {
   dctx.fillStyle='#555'; dctx.font='10px Space Mono'; [0,0.5,1].forEach(f=>dctx.fillText(Math.round(minV+f*(maxV-minV))+'ms', dpad.l+f*dcw-12, 180-4));
 }
 
-// --------------------------------------------------------------
-//  EXPORT & RESET
-// --------------------------------------------------------------
 function exportCSV() {
   const main = trials.filter(t=>t.phase==='main' && t.rt!==undefined);
   let csv = "participant_id,group,date,trial,word,ink,response,rt_ms,correct,congruent,isi_jitter_ms,viewport,device_type,timestamp\n";
@@ -776,9 +489,6 @@ function exportJSON() {
 }
 function resetStudy() { try { localStorage.removeItem('stroop_session'); } catch(e) {} location.reload(); }
 
-// --------------------------------------------------------------
-//  SESSION PERSISTENCE & RESIZE HANDLER
-// --------------------------------------------------------------
 function checkSavedSession() {
   try {
     const saved = localStorage.getItem('stroop_session');
@@ -795,9 +505,7 @@ function restoreSession() {
   try {
     const banner = document.getElementById('restoreBanner');
     const data = banner._savedData;
-    participantId = data.participantId;
-    group = data.group;
-    trials = data.trials;
+    participantId = data.participantId; group = data.group; trials = data.trials;
     document.getElementById('pidDisplay').innerText = participantId;
     banner.style.display = 'none';
     buildResults();
@@ -806,7 +514,6 @@ function restoreSession() {
 }
 function dismissRestore() { try { localStorage.removeItem('stroop_session'); } catch(e) {} document.getElementById('restoreBanner').style.display = 'none'; }
 
-// Redibujar gráficos al cambiar orientación o redimensionar
 window.addEventListener('resize', () => {
   if (document.getElementById('screen-results').classList.contains('active')) {
     const mainTrials = trials.filter(t => t.phase === 'main' && t.rt !== undefined);
@@ -822,4 +529,3 @@ checkSavedSession();
 </script>
 </body>
 </html>
-  
