@@ -273,7 +273,7 @@ async function sendTrial(trial) {
   try {
     await _supabase.from('gonogo_trials').insert({
       participant_id: participantId,
-      group: group,
+      cohort: group,
       trial: trial.trialIndex,
       stimulus: trial.stimulus,
       stimulus_type: trial.stimulusType, // 'go' or 'nogo'
