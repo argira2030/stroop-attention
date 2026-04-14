@@ -413,12 +413,13 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 //       Stroop usa 'cohort' para el grupo; el resto usa 'group'.
 // ============================================================
 const TASK_CONFIG = {
-  stroop:  { table: 'stroop_trials',  rtField: 'rt',    groupField: 'cohort'  },
-  flanker: { table: 'flanker_trials', rtField: 'rt_ms', groupField: 'group'   },
-  simon:   { table: 'simon_trials',   rtField: 'rt_ms', groupField: 'group'   },
-  gonogo:  { table: 'gonogo_trials',  rtField: 'rt_ms', groupField: 'group'   },
-  ant:     { table: 'ant_trials',     rtField: 'rt_ms', groupField: 'group'   },
-  nback:   { table: 'nback_trials',   rtField: 'rt_ms', groupField: 'group'   },
+  stroop:  { table: 'stroop_trials',  rtField: 'rt',    groupField: 'cohort' },
+  flanker: { table: 'flanker_trials', rtField: 'rt_ms', groupField: 'cohort' },
+  simon:   { table: 'simon_trials',   rtField: 'rt_ms', groupField: 'cohort' },
+  gonogo:  { table: 'gonogo_trials',  rtField: 'rt_ms', groupField: 'cohort' },
+  ant:     { table: 'ant_trials',     rtField: 'rt_ms', groupField: 'cohort' },
+  nback:   { table: 'nback_trials',   rtField: 'rt_ms', groupField: 'cohort' },
+  posner:  { table: 'posner_trials',  rtField: 'rt_ms', groupField: 'cohort' }   // ← NUEVO
 };
 
 // Alias normalizado: añade .rt y .group a cada fila para que el
