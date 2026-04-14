@@ -286,7 +286,7 @@ async function sendTrial(trial) {
   try {
     await _supabase.from('simon_trials').insert({
       participant_id: participantId,
-      group: group,
+      cohort: group,
       trial: trial.trialIndex,
       direction: trial.direction,
       position: trial.position,
