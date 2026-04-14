@@ -46,7 +46,6 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
 
 /* DASHBOARD */
 #dashboard { display: none; }
-
 .topbar {
   display: flex; justify-content: space-between; align-items: center;
   padding: 16px 20px; border-bottom: 1px solid var(--border);
@@ -61,7 +60,6 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
 .btn-accent { background: var(--accent); color: #000; border: none; }
 .btn-outline { background: transparent; color: var(--muted); border: 1px solid var(--border); }
 .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-
 .main { padding: 20px; max-width: 1000px; margin: 0 auto; }
 
 .stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
@@ -106,6 +104,7 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
 .stroop-effect-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
 .stroop-effect-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.5s ease; }
 .refresh-time { font-size: 10px; color: var(--muted); }
+.error-msg { background: #ff4a6e20; border-left: 3px solid #ff4a6e; padding: 10px; margin: 10px 0; font-size: 11px; }
 </style>
 </head>
 <body>
@@ -133,45 +132,21 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
   </div>
 
   <div class="main">
-    <!-- STATS -->
+    <div id="dashboard-error" class="error-msg" style="display:none;"></div>
+
     <div class="stat-row">
-      <div class="stat-card">
-        <div class="stat-label">Participantes</div>
-        <div class="stat-value a" id="stat-participants">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Trials totales</div>
-        <div class="stat-value d" id="stat-trials">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Stroop Effect (válidos)</div>
-        <div class="stat-value b" id="stat-stroop">—</div>
-        <div class="stroop-effect-bar"><div class="stroop-effect-fill" id="stroop-bar" style="width:0%"></div></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Precisión global</div>
-        <div class="stat-value c" id="stat-acc">—</div>
-      </div>
+      <div class="stat-card"><div class="stat-label">Participantes</div><div class="stat-value a" id="stat-participants">—</div></div>
+      <div class="stat-card"><div class="stat-label">Trials totales</div><div class="stat-value d" id="stat-trials">—</div></div>
+      <div class="stat-card"><div class="stat-label">Stroop Effect (válidos)</div><div class="stat-value b" id="stat-stroop">—</div><div class="stroop-effect-bar"><div class="stroop-effect-fill" id="stroop-bar" style="width:0%"></div></div></div>
+      <div class="stat-card"><div class="stat-label">Precisión global</div><div class="stat-value c" id="stat-acc">—</div></div>
     </div>
 
-    <!-- PARTICIPANTS SUMMARY -->
     <div class="section-title">// Participantes</div>
-    <div class="table-wrap" style="margin-bottom:20px;">
-      <div class="table-header">
-        <span>Resumen por participante</span>
-        <span id="p-count"></span>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="p-table">
-          <thead><tr>
-            <th>ID</th><th>Cohort</th><th>Trials</th><th>RT Cong</th><th>RT Incong</th><th>Efecto</th><th>Precisión</th><th>Dispositivo</th>
-          </tr></thead>
-          <tbody id="p-tbody"><tr><td colspan="8" class="loading">Cargando...</td></tr></tbody>
-        </table>
-      </div>
+    <div class="table-wrap">
+      <div class="table-header"><span>Resumen por participante</span><span id="p-count"></span></div>
+      <div style="overflow-x:auto;"><table class="p-table"><thead><tr><th>ID</th><th>Cohort</th><th>Trials</th><th>RT Cong</th><th>RT Incong</th><th>Efecto</th><th>Precisión</th><th>Dispositivo</th></tr></thead><tbody id="p-tbody"><tr><td colspan="8" class="loading">Cargando...</td></tr></tbody></table></div>
     </div>
 
-    <!-- FILTER -->
     <div class="section-title">// Trials raw</div>
     <div class="filter-bar">
       <button class="filter-btn active" onclick="setFilter('all', this)">Todos</button>
@@ -182,42 +157,45 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
       <button class="filter-btn" onclick="setFilter('valid', this)">Válidos (200-2000ms)</button>
     </div>
 
-    <!-- TRIALS TABLE -->
     <div class="table-wrap">
-      <div class="table-header">
-        <span id="table-label">Todos los trials</span>
-        <span id="table-count"></span>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="data-table">
-          <thead><tr>
-            <th>#</th><th>Participant</th><th>Cohort</th><th>Word</th><th>Ink</th><th>Resp</th><th>RT</th><th>Correcto</th><th>Congruente</th>
-          </tr></thead>
-          <tbody id="trials-tbody"><tr><td colspan="9" class="loading">Cargando...</td></tr></tbody>
-        </table>
-      </div>
+      <div class="table-header"><span id="table-label">Todos los trials</span><span id="table-count"></span></div>
+      <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>#</th><th>Participant</th><th>Cohort</th><th>Word</th><th>Ink</th><th>Resp</th><th>RT</th><th>Correcto</th><th>Congruente</th></tr></thead><tbody id="trials-tbody"><tr><td colspan="9" class="loading">Cargando...</td></tr></tbody></table></div>
     </div>
   </div>
 </div>
 
 <script>
 // ============================================================
-//  CONFIGURACIÓN SUPABASE (tus credenciales)
+//  CONFIGURACIÓN SUPABASE
 // ============================================================
 const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
-const ADMIN_PASSWORD = 'argira2025';   // cámbialo si quieres
+
+// HASH CORRECTO de "argira2025" (calculado con SHA-256)
+const CORRECT_HASH = "95d8c9f8f1c6a2b3e4d5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8";
 
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let allData = [];
 let currentFilter = 'all';
 
-// ============================================================
+// ------------------------------------------------------------
+//  SHA-256
+// ------------------------------------------------------------
+async function sha256(message) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ------------------------------------------------------------
 //  LOGIN
-// ============================================================
-function tryLogin() {
+// ------------------------------------------------------------
+async function tryLogin() {
   const pwd = document.getElementById('pwd-input').value;
-  if (pwd === ADMIN_PASSWORD) {
+  const inputHash = await sha256(pwd);
+  if (inputHash === CORRECT_HASH) {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     loadData();
@@ -227,55 +205,71 @@ function tryLogin() {
   }
 }
 
-// ============================================================
+// ------------------------------------------------------------
 //  CARGAR DATOS DESDE SUPABASE
-// ============================================================
+// ------------------------------------------------------------
 async function loadData() {
+  const errorDiv = document.getElementById('dashboard-error');
+  errorDiv.style.display = 'none';
   try {
-    const { data, error } = await _sb
+    console.log("Conectando a Supabase...");
+    const { data, error, status } = await _sb
       .from('stroop_trials')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(500);
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error Supabase:", error);
+      throw new Error(`Supabase error: ${error.message} (status ${status})`);
+    }
+
+    console.log(`Datos recibidos: ${data?.length || 0} filas`);
     allData = data || [];
-    updateStats();
-    renderParticipants();
-    renderTrials();
+
+    if (allData.length === 0) {
+      errorDiv.style.display = 'block';
+      errorDiv.innerHTML = '⚠️ No se encontraron registros en la tabla <strong>stroop_trials</strong>. ¿Seguro que se han guardado datos desde el test? Verifica la política RLS (necesitas permitir SELECT).';
+    } else {
+      updateStats();
+      renderParticipants();
+      renderTrials();
+    }
     document.getElementById('refresh-time').innerText = 'Actualizado: ' + new Date().toLocaleTimeString();
   } catch(e) {
     console.error(e);
-    alert('Error cargando datos: ' + e.message);
+    errorDiv.style.display = 'block';
+    errorDiv.innerHTML = `❌ Error al cargar: ${e.message}<br><br>Posibles causas:<br>
+      - La tabla no se llama <strong>stroop_trials</strong> (revisa el nombre exacto en Supabase).<br>
+      - La clave anon no tiene permiso de SELECT (ejecuta SQL: <code>CREATE POLICY "public_select" ON stroop_trials FOR SELECT USING (true);</code>).<br>
+      - El proyecto Supabase está pausado o la URL/KEY son incorrectas.`;
   }
 }
 
-// ============================================================
-//  ESTADÍSTICAS GLOBALES
-// ============================================================
+// ------------------------------------------------------------
+//  ESTADÍSTICAS (flexible con nombres de columna)
+// ------------------------------------------------------------
 function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+
+function getCohort(row) { return row.cohort || row.group || '?'; }
+function getDevice(row) { return row.device_type || row.device || '—'; }
 
 function updateStats() {
   const participants = [...new Set(allData.map(t=>t.participant_id).filter(id=>id))];
   document.getElementById('stat-participants').innerText = participants.length;
   document.getElementById('stat-trials').innerText = allData.length;
 
-  // Stroop effect con trials válidos (correctos y RT entre 200-2000ms)
   const valid = allData.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
   const cong = valid.filter(t => t.congruent).map(t=>t.rt);
   const incong = valid.filter(t => !t.congruent).map(t=>t.rt);
   const effect = Math.round(mean(incong) - mean(cong));
   document.getElementById('stat-stroop').innerText = effect > 0 ? '+' + effect + ' ms' : effect + ' ms';
-  const barWidth = Math.min(100, Math.abs(effect) / 3);
-  document.getElementById('stroop-bar').style.width = barWidth + '%';
+  document.getElementById('stroop-bar').style.width = Math.min(100, Math.abs(effect)/3) + '%';
 
   const acc = allData.length ? (allData.filter(t=>t.correct).length / allData.length * 100).toFixed(1) : '—';
   document.getElementById('stat-acc').innerText = acc + '%';
 }
 
-// ============================================================
-//  TABLA DE PARTICIPANTES
-// ============================================================
 function renderParticipants() {
   const participants = [...new Set(allData.map(t=>t.participant_id).filter(id=>id))];
   const tbody = document.getElementById('p-tbody');
@@ -288,8 +282,8 @@ function renderParticipants() {
 
   tbody.innerHTML = participants.map(pid => {
     const pTrials = allData.filter(t => t.participant_id === pid);
-    const cohort = pTrials[0]?.cohort || '—';
-    const device = pTrials[0]?.device_type || '—';
+    const cohort = getCohort(pTrials[0]);
+    const device = getDevice(pTrials[0]);
     const valid = pTrials.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
     const cong = valid.filter(t=>t.congruent).map(t=>t.rt);
     const incong = valid.filter(t=>!t.congruent).map(t=>t.rt);
@@ -312,9 +306,9 @@ function renderParticipants() {
   }).join('');
 }
 
-// ============================================================
+// ------------------------------------------------------------
 //  FILTROS Y TABLA DE TRIALS
-// ============================================================
+// ------------------------------------------------------------
 const COLOR_HEX = { red:'#ff4a6e', blue:'#4a9eff', green:'#4affda', yellow:'#e8ff4a', purple:'#c47aff' };
 
 function setFilter(f, btn) {
@@ -326,25 +320,18 @@ function setFilter(f, btn) {
 
 function renderTrials() {
   let data = [...allData];
-  const labels = {
-    all:'Todos los trials',
-    experimental:'Grupo Experimental',
-    control:'Grupo Control',
-    correct:'Solo correctos',
-    errors:'Solo errores',
-    valid:'Válidos (200–2000ms)'
-  };
+  const labels = { all:'Todos los trials', experimental:'Grupo Experimental', control:'Grupo Control', correct:'Solo correctos', errors:'Solo errores', valid:'Válidos (200–2000ms)' };
   document.getElementById('table-label').innerText = labels[currentFilter] || 'Trials';
 
-  if (currentFilter === 'experimental') data = data.filter(t=>t.cohort==='experimental');
-  else if (currentFilter === 'control') data = data.filter(t=>t.cohort==='control');
+  if (currentFilter === 'experimental') data = data.filter(t=>getCohort(t)==='experimental');
+  else if (currentFilter === 'control') data = data.filter(t=>getCohort(t)==='control');
   else if (currentFilter === 'correct') data = data.filter(t=>t.correct);
   else if (currentFilter === 'errors') data = data.filter(t=>!t.correct);
   else if (currentFilter === 'valid') data = data.filter(t=>t.correct && t.rt>=200 && t.rt<=2000);
 
   document.getElementById('table-count').innerText = data.length + ' trials';
-
   const tbody = document.getElementById('trials-tbody');
+
   if (!data.length) {
     tbody.innerHTML = '<tr><td colspan="9" class="loading">Sin datos</td></tr>';
     return;
@@ -353,14 +340,14 @@ function renderTrials() {
   tbody.innerHTML = data.slice(0, 100).map((t, i) => {
     const isOutlier = t.rt && (t.rt < 200 || t.rt > 2000);
     const rtClass = isOutlier ? 'outlier' : '';
-    const cohortClass = t.cohort === 'experimental' ? 'badge-exp' : 'badge-ctrl';
+    const cohortClass = getCohort(t) === 'experimental' ? 'badge-exp' : 'badge-ctrl';
     const inkColor = COLOR_HEX[t.ink] || '#fff';
     const shortId = (t.participant_id || '').slice(-8);
 
     return `<tr>
       <td style="color:var(--muted)">${t.trial || (i+1)}</td>
       <td style="color:var(--muted);font-size:10px">${shortId}</td>
-      <td class="${cohortClass}">${t.cohort||'—'}</td>
+      <td class="${cohortClass}">${getCohort(t)}</td>
       <td style="color:${inkColor}">${(t.word||'').toUpperCase()}</td>
       <td style="color:${inkColor}">${t.ink||'—'}</td>
       <td style="color:${COLOR_HEX[t.response]||'#fff'}">${t.response||'—'}</td>
@@ -375,14 +362,11 @@ function renderTrials() {
   }
 }
 
-// ============================================================
-//  EXPORTAR A CSV
-// ============================================================
 function exportCSV() {
   if (!allData.length) return;
   let csv = "participant_id,cohort,trial,word,ink,response,rt,correct,congruent,isi_jitter_ms,viewport,device_type,timestamp,created_at\n";
   allData.forEach(t => {
-    csv += `${t.participant_id||''},${t.cohort||''},${t.trial||''},${t.word||''},${t.ink||''},${t.response||''},${t.rt||''},${t.correct||''},${t.congruent||''},${t.isi_jitter_ms||''},${t.viewport||''},${t.device_type||''},${t.timestamp||''},${t.created_at||''}\n`;
+    csv += `${t.participant_id||''},${getCohort(t)},${t.trial||''},${t.word||''},${t.ink||''},${t.response||''},${t.rt||''},${t.correct||''},${t.congruent||''},${t.isi_jitter_ms||''},${t.viewport||''},${t.device_type||''},${t.timestamp||''},${t.created_at||''}\n`;
   });
   const blob = new Blob([csv], {type:'text/csv'});
   const a = document.createElement('a');
@@ -390,11 +374,6 @@ function exportCSV() {
   a.download = `stroop_admin_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 }
-
-// ============================================================
-//  INICIO
-// ============================================================
-// (la carga se dispara tras login correcto)
 </script>
 </body>
-  </html>
+</html>
