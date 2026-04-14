@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it as below."
+authors:
+  - family-names: "Ranero García"
+    given-names: "Jose"
+    orcid: "https://orcid.org/0009-0009-3168-6379"
+title: "HCI Cognitive Lab: Attention and Memory Task Battery"
+version: 1.0.0
+date-released: 2026-04-14
+url: "https://argira.eus/stroop-attention/"
+repository-code: "https://github.com/argira2030/stroop-attention"
+license: "MIT"
+keywords:
+  - stroop
+  - flanker
+  - simon
+  - go-nogo
+  - attention-network-test
+  - n-back
+  - posner
+  - cognitive-task
+  - supabase
+  - javascript
+  - attention
+  - memory
+abstract: "A complete web‑based battery of 7 cognitive tasks (Stroop, Flanker, Simon, Go/No‑go, ANT, N‑back, Posner) designed for research in attention, inhibitory control, working memory and spatial orienting. Data are stored in Supabase and can be exported to CSV/JSON. A unified admin dashboard displays real‑time statistics and participant summaries."
