@@ -267,7 +267,7 @@ async function sendTrial(trial) {
   try {
     await _supabase.from('nback_trials').insert({
       participant_id: participantId,
-      group: group,
+      cohort: group,
       trial: trial.trialIndex,
       stimulus: trial.stimulus,
       is_target: trial.isTarget,
