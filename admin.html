@@ -7,6 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
+
 :root {
   --bg: #0a0a0a;
   --surface: #111;
@@ -64,7 +65,6 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
 
 .main { padding: 20px; max-width: 1000px; margin: 0 auto; }
 
-/* STAT CARDS */
 .stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
 .stat-card { background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: 4px; }
 .stat-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
@@ -74,7 +74,6 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
 .stat-value.c { color: var(--accent2); }
 .stat-value.d { color: var(--text); }
 
-/* FILTER BAR */
 .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
 .filter-btn {
   padding: 6px 14px; font-family: 'Space Mono', monospace; font-size: 11px;
@@ -83,7 +82,6 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
 }
 .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(232,255,74,0.05); }
 
-/* TABLE */
 .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
 .table-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
 .data-table { width: 100%; border-collapse: collapse; font-size: 11px; }
@@ -100,17 +98,14 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
 .cong-no { color: var(--muted); font-size: 10px; }
 .outlier { color: var(--muted); text-decoration: line-through; }
 
-/* PARTICIPANTS TABLE */
 .p-table { width: 100%; border-collapse: collapse; font-size: 11px; }
 .p-table th { padding: 10px 12px; text-align: left; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
 .p-table td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
 
 .loading { padding: 40px; text-align: center; color: var(--muted); font-size: 12px; letter-spacing: 0.1em; }
-.section-title { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
-
+.section-title { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; margin-top: 20px; }
 .stroop-effect-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
 .stroop-effect-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.5s ease; }
-
 .refresh-time { font-size: 10px; color: var(--muted); }
 </style>
 </head>
@@ -139,7 +134,6 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
   </div>
 
   <div class="main">
-
     <!-- STATS -->
     <div class="stat-row">
       <div class="stat-card">
@@ -204,28 +198,43 @@ body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(-
         </table>
       </div>
     </div>
-
   </div>
 </div>
 
 <script>
-// --------------------------------------------------------------
-//  CONFIG
-// --------------------------------------------------------------
+// ============================================================
+//  CONFIGURACIÓN credenciales)
+// ============================================================
 const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
-const ADMIN_PASSWORD = 'argira2025'; // cambia esto
+
+
+const PASSWORD_HASH = 'b7e4b2a5b9c8f3a1d2e5f6a8b9c7d4e2f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1'; 
+const CORRECT_HASH = "95d8c9f8f1c6a2b3e4d5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8";
 
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let allData = [];
 let currentFilter = 'all';
 
-// --------------------------------------------------------------
-//  LOGIN
-// --------------------------------------------------------------
-function tryLogin() {
+// ============================================================
+//
+// ============================================================
+async function sha256(message) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+// ============================================================
+//  
+// ============================================================
+async function tryLogin() {
   const pwd = document.getElementById('pwd-input').value;
-  if (pwd === ADMIN_PASSWORD) {
+  const inputHash = await sha256(pwd);
+  if (inputHash === CORRECT_HASH) {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     loadData();
@@ -235,9 +244,9 @@ function tryLogin() {
   }
 }
 
-// --------------------------------------------------------------
-//  LOAD DATA
-// --------------------------------------------------------------
+// ============================================================
+//  CARGAR DATOS DESDE S
+// ============================================================
 async function loadData() {
   try {
     const { data, error } = await _sb
@@ -254,16 +263,17 @@ async function loadData() {
     document.getElementById('refresh-time').innerText = 'Actualizado: ' + new Date().toLocaleTimeString();
   } catch(e) {
     console.error(e);
+    alert('Error cargando datos: ' + e.message);
   }
 }
 
-// --------------------------------------------------------------
-//  STATS
-// --------------------------------------------------------------
+// ============================================================
+//  ESTADÍSTICAS GLOBALES
+// ============================================================
 function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
 
 function updateStats() {
-  const participants = [...new Set(allData.map(t=>t.participant_id))];
+  const participants = [...new Set(allData.map(t=>t.participant_id).filter(id=>id))];
   document.getElementById('stat-participants').innerText = participants.length;
   document.getElementById('stat-trials').innerText = allData.length;
 
@@ -272,17 +282,18 @@ function updateStats() {
   const incong = valid.filter(t => !t.congruent).map(t=>t.rt);
   const effect = Math.round(mean(incong) - mean(cong));
   document.getElementById('stat-stroop').innerText = effect > 0 ? '+' + effect + ' ms' : effect + ' ms';
-  document.getElementById('stroop-bar').style.width = Math.min(100, Math.abs(effect) / 3) + '%';
+  const barWidth = Math.min(100, Math.abs(effect) / 3);
+  document.getElementById('stroop-bar').style.width = barWidth + '%';
 
   const acc = allData.length ? (allData.filter(t=>t.correct).length / allData.length * 100).toFixed(1) : '—';
   document.getElementById('stat-acc').innerText = acc + '%';
 }
 
-// --------------------------------------------------------------
-//  PARTICIPANTS TABLE
-// --------------------------------------------------------------
+// ============================================================
+//  TABLA DE PARTICIPANTES
+// ============================================================
 function renderParticipants() {
-  const participants = [...new Set(allData.map(t=>t.participant_id))];
+  const participants = [...new Set(allData.map(t=>t.participant_id).filter(id=>id))];
   const tbody = document.getElementById('p-tbody');
   document.getElementById('p-count').innerText = participants.length + ' participantes';
 
@@ -302,7 +313,7 @@ function renderParticipants() {
     const acc = pTrials.length ? (pTrials.filter(t=>t.correct).length/pTrials.length*100).toFixed(0) : '—';
     const shortId = pid.slice(-8);
     const cohortClass = cohort === 'experimental' ? 'badge-exp' : 'badge-ctrl';
-    const effectColor = typeof effect === 'number' && effect > 0 ? 'color:var(--accent3)' : 'color:var(--accent2)';
+    const effectColor = (typeof effect === 'number' && effect > 0) ? 'color:var(--accent3)' : 'color:var(--accent2)';
 
     return `<tr>
       <td style="color:var(--muted);font-size:10px">${shortId}</td>
@@ -317,9 +328,9 @@ function renderParticipants() {
   }).join('');
 }
 
-// --------------------------------------------------------------
-//  TRIALS TABLE
-// --------------------------------------------------------------
+// ============================================================
+//  FILTROS Y TABLA DE TRIALS
+// ============================================================
 const COLOR_HEX = { red:'#ff4a6e', blue:'#4a9eff', green:'#4affda', yellow:'#e8ff4a', purple:'#c47aff' };
 
 function setFilter(f, btn) {
@@ -331,7 +342,14 @@ function setFilter(f, btn) {
 
 function renderTrials() {
   let data = [...allData];
-  const labels = { all:'Todos los trials', experimental:'Grupo Experimental', control:'Grupo Control', correct:'Solo correctos', errors:'Solo errores', valid:'Válidos (200–2000ms)' };
+  const labels = {
+    all:'Todos los trials',
+    experimental:'Grupo Experimental',
+    control:'Grupo Control',
+    correct:'Solo correctos',
+    errors:'Solo errores',
+    valid:'Válidos (200–2000ms)'
+  };
   document.getElementById('table-label').innerText = labels[currentFilter] || 'Trials';
 
   if (currentFilter === 'experimental') data = data.filter(t=>t.cohort==='experimental');
@@ -353,10 +371,10 @@ function renderTrials() {
     const rtClass = isOutlier ? 'outlier' : '';
     const cohortClass = t.cohort === 'experimental' ? 'badge-exp' : 'badge-ctrl';
     const inkColor = COLOR_HEX[t.ink] || '#fff';
-    const shortId = (t.participant_id||'').slice(-8);
+    const shortId = (t.participant_id || '').slice(-8);
 
     return `<tr>
-      <td style="color:var(--muted)">${t.trial||i+1}</td>
+      <td style="color:var(--muted)">${t.trial || (i+1)}</td>
       <td style="color:var(--muted);font-size:10px">${shortId}</td>
       <td class="${cohortClass}">${t.cohort||'—'}</td>
       <td style="color:${inkColor}">${(t.word||'').toUpperCase()}</td>
@@ -373,14 +391,14 @@ function renderTrials() {
   }
 }
 
-// --------------------------------------------------------------
-//  EXPORT CSV
-// --------------------------------------------------------------
+// ============================================================
+//  EXPORTAR A CSV
+// ============================================================
 function exportCSV() {
   if (!allData.length) return;
-  let csv = "participant_id,cohort,trial,word,ink,response,rt,correct,congruent,isi_jitter_ms,viewport,device_type,timestamp\n";
+  let csv = "participant_id,cohort,trial,word,ink,response,rt,correct,congruent,isi_jitter_ms,viewport,device_type,timestamp,created_at\n";
   allData.forEach(t => {
-    csv += `${t.participant_id},${t.cohort},${t.trial},${t.word},${t.ink},${t.response||''},${t.rt||''},${t.correct},${t.congruent},${t.isi_jitter_ms||''},${t.viewport||''},${t.device_type||''},${t.timestamp||''}\n`;
+    csv += `${t.participant_id||''},${t.cohort||''},${t.trial||''},${t.word||''},${t.ink||''},${t.response||''},${t.rt||''},${t.correct||''},${t.congruent||''},${t.isi_jitter_ms||''},${t.viewport||''},${t.device_type||''},${t.timestamp||''},${t.created_at||''}\n`;
   });
   const blob = new Blob([csv], {type:'text/csv'});
   const a = document.createElement('a');
@@ -390,4 +408,4 @@ function exportCSV() {
 }
 </script>
 </body>
-</html>
+  </html>
