@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stroop Admin · Argira</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #111;
+  --border: #222;
+  --text: #f0f0f0;
+  --muted: #555;
+  --accent: #e8ff4a;
+  --accent2: #ff4a6e;
+  --accent3: #4affda;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Space Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* LOGIN */
+#login-screen {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh;
+}
+.login-box {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 40px 32px; width: 320px; border-radius: 4px;
+}
+.login-box h1 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
+.login-box p { font-size: 11px; color: var(--muted); margin-bottom: 28px; letter-spacing: 0.1em; }
+.login-box input {
+  width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); font-family: 'Space Mono', monospace; font-size: 13px;
+  border-radius: 2px; margin-bottom: 12px;
+}
+.login-box input:focus { outline: none; border-color: var(--accent); }
+.login-btn {
+  width: 100%; padding: 13px; background: var(--accent); color: #000;
+  border: none; font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 13px; cursor: pointer; border-radius: 2px; letter-spacing: 0.05em;
+}
+.login-error { font-size: 11px; color: var(--accent2); margin-top: 10px; display: none; }
+
+/* DASHBOARD */
+#dashboard { display: none; }
+
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  background: rgba(10,10,10,0.95); position: sticky; top: 0; z-index: 100;
+}
+.topbar-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 13px; color: var(--accent); letter-spacing: 0.15em; }
+.topbar-right { display: flex; gap: 8px; align-items: center; }
+.btn-sm {
+  padding: 7px 14px; font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 11px; cursor: pointer; border-radius: 2px; letter-spacing: 0.05em;
+}
+.btn-accent { background: var(--accent); color: #000; border: none; }
+.btn-outline { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+.main { padding: 20px; max-width: 1000px; margin: 0 auto; }
+
+/* STAT CARDS */
+.stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: 4px; }
+.stat-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
+.stat-value.a { color: var(--accent); }
+.stat-value.b { color: var(--accent3); }
+.stat-value.c { color: var(--accent2); }
+.stat-value.d { color: var(--text); }
+
+/* FILTER BAR */
+.filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-btn {
+  padding: 6px 14px; font-family: 'Space Mono', monospace; font-size: 11px;
+  cursor: pointer; border-radius: 2px; border: 1px solid var(--border);
+  background: transparent; color: var(--muted);
+}
+.filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(232,255,74,0.05); }
+
+/* TABLE */
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
+.table-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.data-table th { padding: 10px 12px; text-align: left; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+.data-table td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); white-space: nowrap; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.badge-exp { color: var(--accent); font-size: 10px; }
+.badge-ctrl { color: var(--accent3); font-size: 10px; }
+.correct-yes { color: var(--accent3); }
+.correct-no { color: var(--accent2); }
+.cong-yes { color: var(--accent); font-size: 10px; }
+.cong-no { color: var(--muted); font-size: 10px; }
+.outlier { color: var(--muted); text-decoration: line-through; }
+
+/* PARTICIPANTS TABLE */
+.p-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.p-table th { padding: 10px 12px; text-align: left; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+.p-table td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+
+.loading { padding: 40px; text-align: center; color: var(--muted); font-size: 12px; letter-spacing: 0.1em; }
+.section-title { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+
+.stroop-effect-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+.stroop-effect-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.5s ease; }
+
+.refresh-time { font-size: 10px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>STROOP ADMIN</h1>
+    <p>// Argira Research Dashboard</p>
+    <input type="password" id="pwd-input" placeholder="Contraseña" onkeydown="if(event.key==='Enter')tryLogin()">
+    <button class="login-btn" onclick="tryLogin()">ENTRAR →</button>
+    <div class="login-error" id="login-error">Contraseña incorrecta</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="topbar">
+    <div class="topbar-logo">STROOP · ADMIN</div>
+    <div class="topbar-right">
+      <span class="refresh-time" id="refresh-time"></span>
+      <button class="btn-sm btn-outline" onclick="loadData()">↺ Refresh</button>
+      <button class="btn-sm btn-accent" onclick="exportCSV()">↓ CSV</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- STATS -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">Participantes</div>
+        <div class="stat-value a" id="stat-participants">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Trials totales</div>
+        <div class="stat-value d" id="stat-trials">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Stroop Effect (válidos)</div>
+        <div class="stat-value b" id="stat-stroop">—</div>
+        <div class="stroop-effect-bar"><div class="stroop-effect-fill" id="stroop-bar" style="width:0%"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Precisión global</div>
+        <div class="stat-value c" id="stat-acc">—</div>
+      </div>
+    </div>
+
+    <!-- PARTICIPANTS SUMMARY -->
+    <div class="section-title">// Participantes</div>
+    <div class="table-wrap" style="margin-bottom:20px;">
+      <div class="table-header">
+        <span>Resumen por participante</span>
+        <span id="p-count"></span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="p-table">
+          <thead><tr>
+            <th>ID</th><th>Cohort</th><th>Trials</th><th>RT Cong</th><th>RT Incong</th><th>Efecto</th><th>Precisión</th><th>Dispositivo</th>
+          </tr></thead>
+          <tbody id="p-tbody"><tr><td colspan="8" class="loading">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FILTER -->
+    <div class="section-title">// Trials raw</div>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFilter('all', this)">Todos</button>
+      <button class="filter-btn" onclick="setFilter('experimental', this)">Experimental</button>
+      <button class="filter-btn" onclick="setFilter('control', this)">Control</button>
+      <button class="filter-btn" onclick="setFilter('correct', this)">Solo correctos</button>
+      <button class="filter-btn" onclick="setFilter('errors', this)">Solo errores</button>
+      <button class="filter-btn" onclick="setFilter('valid', this)">Válidos (200-2000ms)</button>
+    </div>
+
+    <!-- TRIALS TABLE -->
+    <div class="table-wrap">
+      <div class="table-header">
+        <span id="table-label">Todos los trials</span>
+        <span id="table-count"></span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr>
+            <th>#</th><th>Participant</th><th>Cohort</th><th>Word</th><th>Ink</th><th>Resp</th><th>RT</th><th>Correcto</th><th>Congruente</th>
+          </tr></thead>
+          <tbody id="trials-tbody"><tr><td colspan="9" class="loading">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// --------------------------------------------------------------
+//  CONFIG
+// --------------------------------------------------------------
+const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
+const ADMIN_PASSWORD = 'argira2025'; // cambia esto
+
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let allData = [];
+let currentFilter = 'all';
+
+// --------------------------------------------------------------
+//  LOGIN
+// --------------------------------------------------------------
+function tryLogin() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd === ADMIN_PASSWORD) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('pwd-input').value = '';
+  }
+}
+
+// --------------------------------------------------------------
+//  LOAD DATA
+// --------------------------------------------------------------
+async function loadData() {
+  try {
+    const { data, error } = await _sb
+      .from('stroop_trials')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(500);
+
+    if (error) throw error;
+    allData = data || [];
+    updateStats();
+    renderParticipants();
+    renderTrials();
+    document.getElementById('refresh-time').innerText = 'Actualizado: ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+// --------------------------------------------------------------
+//  STATS
+// --------------------------------------------------------------
+function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+
+function updateStats() {
+  const participants = [...new Set(allData.map(t=>t.participant_id))];
+  document.getElementById('stat-participants').innerText = participants.length;
+  document.getElementById('stat-trials').innerText = allData.length;
+
+  const valid = allData.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
+  const cong = valid.filter(t => t.congruent).map(t=>t.rt);
+  const incong = valid.filter(t => !t.congruent).map(t=>t.rt);
+  const effect = Math.round(mean(incong) - mean(cong));
+  document.getElementById('stat-stroop').innerText = effect > 0 ? '+' + effect + ' ms' : effect + ' ms';
+  document.getElementById('stroop-bar').style.width = Math.min(100, Math.abs(effect) / 3) + '%';
+
+  const acc = allData.length ? (allData.filter(t=>t.correct).length / allData.length * 100).toFixed(1) : '—';
+  document.getElementById('stat-acc').innerText = acc + '%';
+}
+
+// --------------------------------------------------------------
+//  PARTICIPANTS TABLE
+// --------------------------------------------------------------
+function renderParticipants() {
+  const participants = [...new Set(allData.map(t=>t.participant_id))];
+  const tbody = document.getElementById('p-tbody');
+  document.getElementById('p-count').innerText = participants.length + ' participantes';
+
+  if (!participants.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="loading">Sin datos aún</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = participants.map(pid => {
+    const pTrials = allData.filter(t => t.participant_id === pid);
+    const cohort = pTrials[0]?.cohort || '—';
+    const device = pTrials[0]?.device_type || '—';
+    const valid = pTrials.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
+    const cong = valid.filter(t=>t.congruent).map(t=>t.rt);
+    const incong = valid.filter(t=>!t.congruent).map(t=>t.rt);
+    const effect = cong.length && incong.length ? Math.round(mean(incong)-mean(cong)) : '—';
+    const acc = pTrials.length ? (pTrials.filter(t=>t.correct).length/pTrials.length*100).toFixed(0) : '—';
+    const shortId = pid.slice(-8);
+    const cohortClass = cohort === 'experimental' ? 'badge-exp' : 'badge-ctrl';
+    const effectColor = typeof effect === 'number' && effect > 0 ? 'color:var(--accent3)' : 'color:var(--accent2)';
+
+    return `<tr>
+      <td style="color:var(--muted);font-size:10px">${shortId}</td>
+      <td class="${cohortClass}">${cohort}</td>
+      <td>${pTrials.length}</td>
+      <td>${cong.length ? Math.round(mean(cong))+'ms' : '—'}</td>
+      <td>${incong.length ? Math.round(mean(incong))+'ms' : '—'}</td>
+      <td style="${effectColor}">${typeof effect === 'number' ? (effect>0?'+':'')+effect+'ms' : '—'}</td>
+      <td>${acc}%</td>
+      <td style="color:var(--muted);font-size:10px">${device}</td>
+    </tr>`;
+  }).join('');
+}
+
+// --------------------------------------------------------------
+//  TRIALS TABLE
+// --------------------------------------------------------------
+const COLOR_HEX = { red:'#ff4a6e', blue:'#4a9eff', green:'#4affda', yellow:'#e8ff4a', purple:'#c47aff' };
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTrials();
+}
+
+function renderTrials() {
+  let data = [...allData];
+  const labels = { all:'Todos los trials', experimental:'Grupo Experimental', control:'Grupo Control', correct:'Solo correctos', errors:'Solo errores', valid:'Válidos (200–2000ms)' };
+  document.getElementById('table-label').innerText = labels[currentFilter] || 'Trials';
+
+  if (currentFilter === 'experimental') data = data.filter(t=>t.cohort==='experimental');
+  else if (currentFilter === 'control') data = data.filter(t=>t.cohort==='control');
+  else if (currentFilter === 'correct') data = data.filter(t=>t.correct);
+  else if (currentFilter === 'errors') data = data.filter(t=>!t.correct);
+  else if (currentFilter === 'valid') data = data.filter(t=>t.correct && t.rt>=200 && t.rt<=2000);
+
+  document.getElementById('table-count').innerText = data.length + ' trials';
+
+  const tbody = document.getElementById('trials-tbody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="loading">Sin datos</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.slice(0, 100).map((t, i) => {
+    const isOutlier = t.rt && (t.rt < 200 || t.rt > 2000);
+    const rtClass = isOutlier ? 'outlier' : '';
+    const cohortClass = t.cohort === 'experimental' ? 'badge-exp' : 'badge-ctrl';
+    const inkColor = COLOR_HEX[t.ink] || '#fff';
+    const shortId = (t.participant_id||'').slice(-8);
+
+    return `<tr>
+      <td style="color:var(--muted)">${t.trial||i+1}</td>
+      <td style="color:var(--muted);font-size:10px">${shortId}</td>
+      <td class="${cohortClass}">${t.cohort||'—'}</td>
+      <td style="color:${inkColor}">${(t.word||'').toUpperCase()}</td>
+      <td style="color:${inkColor}">${t.ink||'—'}</td>
+      <td style="color:${COLOR_HEX[t.response]||'#fff'}">${t.response||'—'}</td>
+      <td class="${rtClass}">${t.rt||'—'}ms${isOutlier?' ⚠':''}</td>
+      <td class="${t.correct?'correct-yes':'correct-no'}">${t.correct?'✓':'✗'}</td>
+      <td class="${t.congruent?'cong-yes':'cong-no'}">${t.congruent?'CONG':'INCON'}</td>
+    </tr>`;
+  }).join('');
+
+  if (data.length > 100) {
+    tbody.innerHTML += `<tr><td colspan="9" style="text-align:center;padding:12px;color:var(--muted);font-size:10px;">... ${data.length - 100} trials más — exporta CSV para verlos todos</td></tr>`;
+  }
+}
+
+// --------------------------------------------------------------
+//  EXPORT CSV
+// --------------------------------------------------------------
+function exportCSV() {
+  if (!allData.length) return;
+  let csv = "participant_id,cohort,trial,word,ink,response,rt,correct,congruent,isi_jitter_ms,viewport,device_type,timestamp\n";
+  allData.forEach(t => {
+    csv += `${t.participant_id},${t.cohort},${t.trial},${t.word},${t.ink},${t.response||''},${t.rt||''},${t.correct},${t.congruent},${t.isi_jitter_ms||''},${t.viewport||''},${t.device_type||''},${t.timestamp||''}\n`;
+  });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `stroop_admin_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+</script>
+</body>
+</html>
