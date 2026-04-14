@@ -277,7 +277,7 @@ async function sendTrial(trial) {
   try {
     await _supabase.from('ant_trials').insert({
       participant_id: participantId,
-      group: group,
+      cohort: group,
       trial: trial.trialIndex,
       cue_type: trial.cueType,
       flanker_type: trial.flankerType,
