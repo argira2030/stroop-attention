@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Posner Cueing Task · Atención espacial</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --muted: #666;
+  --accent: #e8ff4a;
+  --accent2: #ff4a6e;
+  --accent3: #4affda;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Space Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(232,255,74,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,255,74,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; }
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 32px; border-bottom: 1px solid var(--border);
+  background: rgba(10,10,10,0.8); backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo {
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent);
+}
+.badge {
+  font-size: 10px; letter-spacing: 0.15em; color: var(--muted);
+  text-transform: uppercase; border: 1px solid var(--border); padding: 4px 10px; border-radius: 2px;
+}
+#screen-intro { justify-content: center; align-items: center; padding: 40px 32px; }
+.intro-content { max-width: 600px; width: 100%; animation: fadeUp 0.6s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.intro-tag { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+.intro-title { font-family: 'Syne', sans-serif; font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.05; margin-bottom: 24px; }
+.intro-title span { color: var(--accent); }
+.intro-desc { font-size: 13px; line-height: 1.8; color: #aaa; margin-bottom: 32px; }
+.ethics-box {
+  border: 1px solid var(--border); background: var(--surface); padding: 16px 20px;
+  border-radius: 4px; font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 32px;
+}
+.ethics-box strong { color: var(--accent3); display: block; margin-bottom: 4px; letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px; }
+.group-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.group-btn {
+  padding: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  cursor: pointer; font-family: 'Space Mono', monospace; font-size: 12px; text-align: left;
+  border-radius: 4px; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.group-btn::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; }
+.group-btn.experimental::before { background: linear-gradient(135deg, rgba(232,255,74,0.08), transparent); }
+.group-btn.control::before { background: linear-gradient(135deg, rgba(74,255,218,0.08), transparent); }
+.group-btn:hover::before, .group-btn.selected::before { opacity: 1; }
+.group-btn.selected.experimental { border-color: var(--accent); }
+.group-btn.selected.control { border-color: var(--accent3); }
+.group-btn .g-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 4px; display: block; }
+.group-btn.experimental .g-label { color: var(--accent); }
+.group-btn.control .g-label { color: var(--accent3); }
+.group-btn .g-desc { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.btn-primary { width: 100%; padding: 16px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+#screen-task { align-items: center; justify-content: center; padding: 40px 32px; }
+.task-wrapper { max-width: 700px; width: 100%; }
+.progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 32px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+.trial-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 48px; }
+.stroop-stage-label { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); text-align: center; margin-bottom: 12px; }
+.stimulus-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  margin-bottom: 48px;
+  position: relative;
+}
+.fixation { font-size: 32px; color: var(--muted); user-select: none; margin-bottom: 30px; }
+.cue-area {
+  font-size: 48px;
+  color: var(--accent);
+  margin-bottom: 30px;
+  min-height: 80px;
+  letter-spacing: 0.2em;
+}
+.target-area {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+}
+.target-box {
+  width: 80px;
+  height: 80px;
+  background: transparent;
+  border: 3px solid var(--border);
+  border-radius: 8px;
+  transition: background 0.1s ease;
+}
+.target-box.active {
+  background: var(--accent3);
+  border-color: var(--accent3);
+}
+.response-grid { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
+.resp-btn {
+  padding: 16px 32px; border: 2px solid var(--border); background: var(--surface);
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; cursor: pointer;
+  border-radius: 60px; text-transform: uppercase; transition: all 0.15s;
+}
+.resp-btn.left { color: var(--accent3); border-color: var(--accent3); }
+.resp-btn.right { color: var(--accent2); border-color: var(--accent2); }
+.resp-btn:active { transform: scale(0.96); }
+.feedback-flash { position: fixed; inset: 0; pointer-events: none; z-index: 200; opacity: 0; transition: opacity 0.1s; }
+.feedback-flash.correct { background: rgba(74,255,218,0.07); opacity: 1; }
+.feedback-flash.wrong { background: rgba(255,74,110,0.07); opacity: 1; }
+.rt-ticker { position: fixed; top: 80px; right: 32px; font-size: 11px; color: var(--muted); font-family: monospace; }
+#screen-results { padding: 40px 32px; align-items: center; }
+.results-content { max-width: 800px; width: 100%; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 4px; }
+.stat-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; }
+.stat-value.accent { color: var(--accent); }
+.stat-value.accent2 { color: var(--accent2); }
+.stat-value.accent3 { color: var(--accent3); }
+.chart-section { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 24px; }
+.chart-title { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+canvas { max-height: 260px; width: 100%; }
+.trial-log { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 24px; }
+.trial-log-header { padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+.trial-log-body { max-height: 200px; overflow-y: auto; font-size: 11px; }
+.trial-row { display: grid; grid-template-columns: 40px 80px 80px 60px; padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.03); align-items: center; gap: 8px; }
+.trial-row.header { color: var(--muted); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; background: rgba(255,255,255,0.02); }
+.correct-dot { color: var(--success); }
+.wrong-dot { color: var(--danger); }
+.paper-box { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
+.paper-box h3 { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+.paper-text { font-size: 12px; line-height: 1.9; color: #ccc; white-space: pre-wrap; font-family: 'Space Mono', monospace; }
+.action-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-export { flex: 1; min-width: 140px; padding: 14px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-outline { flex: 1; min-width: 140px; padding: 14px; background: transparent; color: var(--text); border: 1px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.priming-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(12px);
+  z-index: 300; display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+}
+.priming-overlay.active { opacity: 1; visibility: visible; }
+.priming-card { max-width: 500px; background: var(--surface); border: 1px solid var(--accent); padding: 40px 32px; border-radius: 12px; text-align: center; }
+.priming-icon { font-size: 48px; margin-bottom: 20px; }
+.priming-message { font-size: 24px; font-weight: 700; margin-bottom: 16px; color: var(--accent); }
+.priming-sub { font-size: 13px; color: var(--muted); }
+.priming-progress { margin-top: 28px; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.priming-progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.2s linear; }
+@media (max-width: 680px) {
+  #screen-results { padding: 20px 16px !important; }
+  .stats-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+  .stat-value { font-size: 22px !important; }
+  .trial-row { grid-template-columns: 30px 60px 60px 50px !important; font-size: 9px !important; gap: 4px !important; padding: 6px 8px !important; }
+  .target-box { width: 60px; height: 60px; }
+  .cue-area { font-size: 36px; }
+  .resp-btn { padding: 12px 20px; font-size: 18px; }
+  .rt-ticker { top: auto; bottom: 16px; right: 16px; background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 20px; font-size: 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="feedback-flash" id="feedbackFlash"></div>
+<div id="primingOverlay" class="priming-overlay">
+  <div class="priming-card">
+    <div class="priming-icon">🎯</div>
+    <div class="priming-message" id="primingMsg">Focus attention</div>
+    <div class="priming-sub" id="primingSub">Prepare for Posner task</div>
+    <div class="priming-progress"><div class="priming-progress-fill" id="primingFill"></div></div>
+  </div>
+</div>
+
+<!-- INTRO SCREEN -->
+<div class="screen active" id="screen-intro">
+  <div class="header">
+    <div class="logo">POSNER · HCI</div>
+    <div style="display:flex;gap:10px;"><div class="badge">Spatial Cueing Task</div></div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
+    <div class="intro-content">
+      <div class="intro-tag">// Posner Cueing Paradigm</div>
+      <h1 class="intro-title">Atención<br><span>Espacial</span><br>y Foco</h1>
+      <p class="intro-desc">Un asterisco (*) aparecerá a la izquierda o derecha. Indica dónde aparecerá el objetivo (cuadrado) en la mayoría de los ensayos. Presiona el botón correspondiente a la posición del objetivo (IZQUIERDA o DERECHA) lo más rápido posible.</p>
+      <div class="ethics-box"><strong>⚖ Ethical Statement</strong><span>No tracking. Local only. Data stored in Supabase.</span></div>
+      <div class="ethics-box" style="border-color:#333; display:flex; justify-content:space-between;">
+        <div><strong style="color:var(--accent)">⬡ PARTICIPANT ID</strong><span id="pidDisplay" style="margin-left:12px;"></span></div>
+        <button onclick="regenerateID()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:4px 8px;">↺</button>
+      </div>
+      <div style="margin-bottom:16px; font-size:11px; color:var(--muted);">Select group assignment</div>
+      <div class="group-row">
+        <button class="group-btn experimental" onclick="selectGroup('experimental')" id="btn-exp"><span class="g-label">Experimental</span><span class="g-desc">Receives attention priming before task</span></button>
+        <button class="group-btn control" onclick="selectGroup('control')" id="btn-ctrl"><span class="g-label">Control</span><span class="g-desc">Direct cognitive task sequence</span></button>
+      </div>
+      <button class="btn-primary" id="startBtn" disabled onclick="startStudy()">Begin Study →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK SCREEN -->
+<div class="screen" id="screen-task">
+  <div class="header"><div class="logo">POSNER · HCI</div><div class="badge" id="phaseLabel">Practice</div></div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:32px 24px;">
+    <div class="task-wrapper">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>
+      <div class="trial-meta"><span id="trialCounter">Trial 0 / 0</span><span id="phaseDesc">Warm-up</span></div>
+      <div class="stroop-stage-label" id="stageLabel">¿Dónde aparece el cuadrado?</div>
+      <div class="stimulus-area">
+        <div class="fixation" id="fixation">+</div>
+        <div class="cue-area" id="cueDisplay"></div>
+        <div class="target-area">
+          <div class="target-box" id="targetLeft"></div>
+          <div class="target-box" id="targetRight"></div>
+        </div>
+      </div>
+      <div class="response-grid">
+        <button class="resp-btn left" onclick="respond('left')">← IZQUIERDA</button>
+        <button class="resp-btn right" onclick="respond('right')">DERECHA →</button>
+      </div>
+    </div>
+  </div>
+  <div class="rt-ticker" id="rtTicker"></div>
+</div>
+
+<!-- RESULTS SCREEN -->
+<div class="screen" id="screen-results">
+  <div class="header"><div class="logo">POSNER · HCI</div><div class="badge">Analysis Complete</div></div>
+  <div style="padding:40px 32px; display:flex; justify-content:center;">
+    <div class="results-content">
+      <h2 class="results-title">Results</h2><p class="results-subtitle" id="resultsMeta"></p>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="chart-section"><div class="chart-title">// Efecto de orientación atencional</div><canvas id="taskChart" height="200"></canvas></div>
+      <div class="trial-log"><div class="trial-log-header">// Raw Trial Log (Main)</div><div class="trial-log-body"><div class="trial-row header"><span>#</span><span>Cue</span><span>Target</span><span>RT(ms)</span><span>Correct</span></div><div id="trialLog"></div></div></div>
+      <div class="paper-box"><h3>// APA Style Results</h3><div class="paper-text" id="paperText"></div></div>
+      <div class="action-row">
+        <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
+        <button class="btn-export" style="background:var(--accent3);color:#000;" onclick="exportJSON()">↓ Export JSON</button>
+        <button class="btn-outline" onclick="resetStudy()">↺ New Session</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  SUPABASE CONFIG
+// ============================================================
+const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function sendTrial(trial) {
+  try {
+    await _supabase.from('posner_trials').insert({
+      participant_id: participantId,
+      cohort: group,
+      trial: trial.trialIndex,
+      cue_position: trial.cuePosition,
+      target_position: trial.targetPosition,
+      valid_trial: trial.valid,
+      response: trial.response,
+      rt_ms: trial.rt,
+      correct: trial.correct,
+      isi_jitter_ms: trial.jitter,
+      viewport: trial.viewport,
+      device_type: trial.deviceType,
+      timestamp: trial.timestamp
+    });
+  } catch(e) { console.warn(e); }
+}
+
+// ============================================================
+//  CONSTANTS
+// ============================================================
+const PRACTICE_TRIALS = 10;
+const MAIN_TRIALS = 60;
+const VALID_PROB = 0.75;
+let participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
+let group = null;
+let trials = [];
+let currentIdx = 0;
+let stimStart = 0;
+let waiting = false;
+let fixationTimer = null;
+
+// ============================================================
+//  TRIAL GENERATION
+// ============================================================
+function makeTrial(phase) {
+  const cueSide = Math.random() < 0.5 ? 'left' : 'right';
+  let targetSide;
+  let valid;
+  if (Math.random() < VALID_PROB) {
+    targetSide = cueSide;
+    valid = true;
+  } else {
+    targetSide = (cueSide === 'left') ? 'right' : 'left';
+    valid = false;
+  }
+  return {
+    cuePosition: cueSide,
+    targetPosition: targetSide,
+    valid: valid,
+    phase: phase,
+    rt: null,
+    correct: null,
+    response: null,
+    jitter: null,
+    viewport: null,
+    deviceType: null,
+    timestamp: null,
+    trialIndex: null
+  };
+}
+
+function buildTrials() {
+  let list = [];
+  for (let i = 0; i < PRACTICE_TRIALS; i++) list.push(makeTrial('practice'));
+  for (let i = 0; i < MAIN_TRIALS; i++) list.push(makeTrial('main'));
+  // Shuffle
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
+}
+
+// ============================================================
+//  TASK FLOW
+// ============================================================
+function startCoreTask() {
+  trials = buildTrials();
+  currentIdx = 0;
+  showScreen('screen-task');
+  nextTrial();
+}
+
+function nextTrial() {
+  if (currentIdx >= trials.length) { finishTask(); return; }
+  const trial = trials[currentIdx];
+  const total = trials.length;
+  document.getElementById('progressBar').style.width = (currentIdx / total * 100) + '%';
+  document.getElementById('trialCounter').innerHTML = `Trial ${currentIdx+1} / ${total}`;
+  const isPractice = trial.phase === 'practice';
+  document.getElementById('phaseLabel').innerText = isPractice ? 'Practice' : 'Main Study';
+  document.getElementById('phaseDesc').innerHTML = trial.valid ? 'Válido (75%)' : 'Inválido (25%)';
+  
+  setResponseState(false);
+  waiting = false;
+  document.getElementById('fixation').style.display = 'block';
+  document.getElementById('cueDisplay').innerHTML = '';
+  document.getElementById('targetLeft').classList.remove('active');
+  document.getElementById('targetRight').classList.remove('active');
+  
+  const fixationTime = 400 + Math.random() * 400;
+  if (fixationTimer) clearTimeout(fixationTimer);
+  fixationTimer = setTimeout(() => {
+    document.getElementById('fixation').style.display = 'none';
+    // Show cue (asterisk)
+    const cueSymbol = trial.cuePosition === 'left' ? '*' : '   *';
+    document.getElementById('cueDisplay').innerHTML = cueSymbol;
+    // After 100-300ms, show target
+    const cueTargetDelay = 150 + Math.random() * 150;
+    setTimeout(() => {
+      document.getElementById('cueDisplay').innerHTML = '';
+      // Activate target box
+      if (trial.targetPosition === 'left') {
+        document.getElementById('targetLeft').classList.add('active');
+      } else {
+        document.getElementById('targetRight').classList.add('active');
+      }
+      stimStart = performance.now();
+      setResponseState(true);
+      waiting = true;
+    }, cueTargetDelay);
+  }, fixationTime);
+}
+
+function setResponseState(active) {
+  document.querySelectorAll('.resp-btn').forEach(btn => btn.disabled = !active);
+  waiting = active;
+}
+
+function respond(side) {
+  if (!waiting) return;
+  let rt = Math.round(performance.now() - stimStart);
+  const trial = trials[currentIdx];
+  const correct = (side === trial.targetPosition);
+  
+  const flash = document.getElementById('feedbackFlash');
+  flash.className = 'feedback-flash ' + (correct ? 'correct' : 'wrong');
+  setTimeout(() => flash.className = 'feedback-flash', 200);
+  
+  if (rt < 200 || rt > 2000) {
+    document.getElementById('rtTicker').innerHTML = `⚠️ Respuesta demasiado rápida/lenta (${rt} ms) — repite`;
+    setTimeout(() => {
+      waiting = false;
+      setResponseState(false);
+      // Re-present same trial
+      document.getElementById('fixation').style.display = 'none';
+      document.getElementById('cueDisplay').innerHTML = '';
+      document.getElementById('targetLeft').classList.remove('active');
+      document.getElementById('targetRight').classList.remove('active');
+      const cueSymbol = trial.cuePosition === 'left' ? '*' : '   *';
+      document.getElementById('cueDisplay').innerHTML = cueSymbol;
+      setTimeout(() => {
+        document.getElementById('cueDisplay').innerHTML = '';
+        if (trial.targetPosition === 'left') {
+          document.getElementById('targetLeft').classList.add('active');
+        } else {
+          document.getElementById('targetRight').classList.add('active');
+        }
+        stimStart = performance.now();
+        setResponseState(true);
+        waiting = true;
+      }, 150);
+    }, 800);
+    return;
+  }
+  
+  document.getElementById('rtTicker').innerHTML = rt + ' ms';
+  
+  if (trial.phase === 'main') {
+    trial.rt = rt;
+    trial.correct = correct;
+    trial.response = side;
+    trial.timestamp = new Date().toISOString();
+    trial.viewport = `${window.innerWidth}x${window.innerHeight}`;
+    trial.deviceType = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
+    trial.trialIndex = currentIdx + 1;
+    try { localStorage.setItem('posner_session', JSON.stringify({ participantId, group, trials })); } catch(e) {}
+    sendTrial(trial);
+  }
+  currentIdx++;
+  setTimeout(() => nextTrial(), 280);
+}
+
+function finishTask() { buildResults(); showScreen('screen-results'); }
+
+function runPriming() {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('primingOverlay');
+    const msgDiv = document.getElementById('primingMsg');
+    const subDiv = document.getElementById('primingSub');
+    const fillDiv = document.getElementById('primingFill');
+    const steps = [
+      { msg: "🎯 FOCUS ATTENTION", sub: "Prepare to shift spatial attention" },
+      { msg: "✨ FOLLOW THE ASTERISK", sub: "It predicts where the target will appear" },
+      { msg: "⚡ READY", sub: "Posner task begins" }
+    ];
+    overlay.classList.add('active');
+    let stepIdx = 0;
+    function showStep() {
+      if (stepIdx >= steps.length) { overlay.classList.remove('active'); resolve(); return; }
+      msgDiv.innerText = steps[stepIdx].msg;
+      subDiv.innerText = steps[stepIdx].sub;
+      fillDiv.style.width = '0%';
+      let startTime = Date.now();
+      const duration = 1500;
+      const interval = setInterval(() => {
+        let elapsed = Date.now() - startTime;
+        let percent = Math.min(100, (elapsed / duration) * 100);
+        fillDiv.style.width = percent + '%';
+        if (elapsed >= duration) { clearInterval(interval); stepIdx++; showStep(); }
+      }, 20);
+    }
+    showStep();
+  });
+}
+
+async function startStudy() { if (!group) return; if (group === 'experimental') { await runPriming(); startCoreTask(); } else { startCoreTask(); } }
+
+// ============================================================
+//  STATISTICS
+// ============================================================
+function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+function std(arr) { if(arr.length<2) return 0; let m=mean(arr); return Math.sqrt(arr.reduce((s,x)=>s+(x-m)**2,0)/(arr.length-1)); }
+
+function buildResults() {
+  const mainTrials = trials.filter(t => t.phase === 'main' && t.correct && t.rt >= 200 && t.rt <= 2000);
+  const validTrials = mainTrials.filter(t => t.valid);
+  const invalidTrials = mainTrials.filter(t => !t.valid);
+  const rtValid = validTrials.map(t=>t.rt);
+  const rtInvalid = invalidTrials.map(t=>t.rt);
+  const effect = mean(rtInvalid) - mean(rtValid);
+  
+  document.getElementById('resultsMeta').innerHTML = `Group: ${group} · Valid trials: ${validTrials.length} · Invalid trials: ${invalidTrials.length} · ${new Date().toLocaleDateString()}`;
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">RT Válido</div><div class="stat-value accent3">${Math.round(mean(rtValid))} ms</div></div>
+    <div class="stat-card"><div class="stat-label">RT Inválido</div><div class="stat-value accent2">${Math.round(mean(rtInvalid))} ms</div></div>
+    <div class="stat-card"><div class="stat-label">Efecto orientación</div><div class="stat-value accent">${Math.round(effect)} ms</div></div>
+    <div class="stat-card"><div class="stat-label">Precisión global</div><div class="stat-value">${(mainTrials.filter(t=>t.correct).length/mainTrials.length*100).toFixed(1)}%</div></div>
+  `;
+  
+  // Chart
+  const ctx = document.getElementById('taskChart').getContext('2d');
+  if (window.posnerChart) window.posnerChart.destroy();
+  window.posnerChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Válido', 'Inválido'],
+      datasets: [{
+        label: 'Tiempo de reacción (ms)',
+        data: [mean(rtValid), mean(rtInvalid)],
+        backgroundColor: ['#4affda', '#ff4a6e'],
+        borderRadius: 4
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#fff' } } } }
+  });
+  
+  // Trial log
+  const logDiv = document.getElementById('trialLog');
+  logDiv.innerHTML = '';
+  mainTrials.forEach((t,i) => {
+    const row = document.createElement('div'); row.className='trial-row';
+    row.innerHTML = `<span>${i+1}</span><span>${t.cuePosition === 'left' ? '←' : '→'}</span><span>${t.targetPosition === 'left' ? '←' : '→'}</span><span>${t.rt}</span><span class="${t.correct?'correct-dot':'wrong-dot'}">${t.correct?'✓':'✗'}</span>`;
+    logDiv.appendChild(row);
+  });
+  
+  document.getElementById('paperText').innerHTML = `Posner task results (group ${group}): RT valid = ${Math.round(mean(rtValid))} ms (SD=${Math.round(std(rtValid))}), RT invalid = ${Math.round(mean(rtInvalid))} ms (SD=${Math.round(std(rtInvalid))}). Orienting effect = ${Math.round(effect)} ms. Accuracy = ${(mainTrials.filter(t=>t.correct).length/mainTrials.length*100).toFixed(1)}%.`;
+}
+
+function exportCSV() {
+  const main = trials.filter(t=>t.phase==='main');
+  let csv = "participant_id,group,date,trial,cue_position,target_position,valid,response,rt_ms,correct,viewport,device_type,timestamp\n";
+  main.forEach((t,i)=>csv+=`${participantId},${group},${new Date().toISOString().slice(0,10)},${i+1},${t.cuePosition},${t.targetPosition},${t.valid},${t.response||'NA'},${t.rt||''},${t.correct?1:0},${t.viewport||''},${t.deviceType||''},${t.timestamp||''}\n`);
+  const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`posner_${participantId}.csv`; a.click();
+}
+function exportJSON() {
+  const main = trials.filter(t=>t.phase==='main');
+  const payload = { meta: { participantId, group, exportedAt: new Date().toISOString() }, trials: main };
+  const blob=new Blob([JSON.stringify(payload, null, 2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`posner_${participantId}.json`; a.click();
+}
+function resetStudy() { try { localStorage.removeItem('posner_session'); } catch(e) {} location.reload(); }
+
+function checkSavedSession() {
+  try {
+    const saved = localStorage.getItem('posner_session');
+    if (!saved) return;
+    const data = JSON.parse(saved);
+    const done = (data.trials||[]).filter(t=>t.phase==='main' && t.rt!==undefined).length;
+    if (done < 3) { localStorage.removeItem('posner_session'); return; }
+    if (confirm('Unsaved session found. Resume?')) {
+      participantId = data.participantId; group = data.group; trials = data.trials;
+      document.getElementById('pidDisplay').innerText = participantId;
+      buildResults(); showScreen('screen-results');
+    } else localStorage.removeItem('posner_session');
+  } catch(e) {}
+}
+
+function regenerateID() { participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase(); document.getElementById('pidDisplay').innerText = participantId; }
+function selectGroup(g) { group = g; document.getElementById('btn-exp').classList.toggle('selected', g==='experimental'); document.getElementById('btn-ctrl').classList.toggle('selected', g==='control'); document.getElementById('startBtn').disabled = false; }
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+document.getElementById('pidDisplay').innerText = participantId;
+checkSavedSession();
+</script>
+</body>
+</html>
