@@ -641,8 +641,11 @@ async function exportPDF() {
   pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
   pdf.save(`${currentTask}_dashboard_${new Date().toISOString().slice(0,10)}.pdf`);
 }
+  
 
 loadData();
+
+  checkSession();
 </script>
 </body>
 </html>
