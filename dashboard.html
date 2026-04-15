@@ -141,6 +141,7 @@ canvas { max-height: 260px; width: 100%; }
     <button class="task-btn" data-task="ant"     onclick="switchTask('ant')">ANT</button>
     <button class="task-btn" data-task="nback"   onclick="switchTask('nback')">N-back</button>
     <button class="task-btn" data-task="posner"  onclick="switchTask('posner')">Posner</button>
+    <button class="task-btn" data-task="taskswitch" onclick="switchTask('taskswitch')">Task Switch</button>
   </div>
   <div class="main" id="reportContainer">
     <div class="filters-bar">
@@ -193,7 +194,8 @@ const TASK_CONFIG = {
   gonogo:  { table: 'gonogo_trials',  rtField: 'rt_ms', groupField: 'cohort' },
   ant:     { table: 'ant_trials',     rtField: 'rt_ms', groupField: 'cohort' },
   nback:   { table: 'nback_trials',   rtField: 'rt_ms', groupField: 'cohort' },
-  posner:  { table: 'posner_trials',  rtField: 'rt_ms', groupField: 'cohort' }
+  posner:  { table: 'posner_trials',  rtField: 'rt_ms', groupField: 'cohort' },
+  taskswitch: { table: 'taskswitch_trials', rtField: 'rt_ms', groupField: 'cohort' }
 };
 
 function normalizeRow(row, cfg) {
@@ -255,7 +257,8 @@ function renderStats(data) {
   let html = `<div class="stat-card"><div class="stat-label">Participantes</div><div class="stat-value accent">${participants.length}</div></div>
               <div class="stat-card"><div class="stat-label">Total ensayos</div><div class="stat-value">${totalTrials}</div><div class="stat-sub">${correctCount} correctos</div></div>
               <div class="stat-card"><div class="stat-label">Precisión global</div><div class="stat-value accent3">${(correctCount/totalTrials*100).toFixed(1)}%</div></div>`;
-  if (['stroop','flanker','simon'].includes(currentTask)) {
+
+  if (currentTask === 'stroop' || currentTask === 'flanker' || currentTask === 'simon') {
     const valid = data.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
     const cong = valid.filter(t => t.congruent).map(t=>t.rt);
     const incong = valid.filter(t => !t.congruent).map(t=>t.rt);
@@ -264,7 +267,8 @@ function renderStats(data) {
     html += `<div class="stat-card"><div class="stat-label">${label}</div><div class="stat-value accent2">${effect} ms</div><div class="stat-sub">${valid.length} válidos</div></div>
              <div class="stat-card"><div class="stat-label">RT Congruente</div><div class="stat-value">${cong.length ? Math.round(mean(cong)) : '—'} ms</div></div>
              <div class="stat-card"><div class="stat-label">RT Incongruente</div><div class="stat-value">${incong.length ? Math.round(mean(incong)) : '—'} ms</div></div>`;
-  } else if (currentTask === 'gonogo') {
+  } 
+  else if (currentTask === 'gonogo') {
     const go = data.filter(t => t.stimulus_type === 'go');
     const nogo = data.filter(t => t.stimulus_type === 'nogo');
     const hits = go.filter(t=>t.correct).length;
@@ -273,13 +277,15 @@ function renderStats(data) {
     const dPrime = ((Math.log((hr+0.01)/(1.01-hr)) - Math.log((far+0.01)/(1.01-far))) / 1.414).toFixed(3);
     html += `<div class="stat-card"><div class="stat-label">d'</div><div class="stat-value accent3">${dPrime}</div></div>
              <div class="stat-card"><div class="stat-label">Aciertos / FA</div><div class="stat-value">${hits} / ${fa}</div></div>`;
-  } else if (currentTask === 'ant') {
+  }
+  else if (currentTask === 'ant') {
     const valid = data.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
     const cong = valid.filter(t => t.flanker_type === 'congruent').map(t=>t.rt);
     const incong = valid.filter(t => t.flanker_type === 'incongruent').map(t=>t.rt);
     const conflict = (cong.length && incong.length) ? Math.round(mean(incong)-mean(cong)) : '—';
     html += `<div class="stat-card"><div class="stat-label">Conflicto ANT</div><div class="stat-value accent2">${conflict} ms</div></div>`;
-  } else if (currentTask === 'nback') {
+  }
+  else if (currentTask === 'nback') {
     const targets = data.filter(t => t.is_target === true);
     const nontargets = data.filter(t => t.is_target === false);
     const hits = targets.filter(t=>t.correct).length, fa = nontargets.filter(t=>!t.correct).length;
@@ -287,7 +293,8 @@ function renderStats(data) {
     const dPrime = ((Math.log((hr+0.01)/(1.01-hr)) - Math.log((far+0.01)/(1.01-far))) / 1.414).toFixed(3);
     html += `<div class="stat-card"><div class="stat-label">d' N-back</div><div class="stat-value accent3">${dPrime}</div></div>
              <div class="stat-card"><div class="stat-label">Aciertos/FA</div><div class="stat-value">${hits}/${fa}</div></div>`;
-  } else if (currentTask === 'posner') {
+  }
+  else if (currentTask === 'posner') {
     const valid = data.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
     const validCue = valid.filter(t => t.valid_trial === true).map(t=>t.rt);
     const invalidCue = valid.filter(t => t.valid_trial === false).map(t=>t.rt);
@@ -295,6 +302,15 @@ function renderStats(data) {
     html += `<div class="stat-card"><div class="stat-label">RT Válido</div><div class="stat-value accent3">${validCue.length ? Math.round(mean(validCue)) : '—'} ms</div></div>
              <div class="stat-card"><div class="stat-label">RT Inválido</div><div class="stat-value accent2">${invalidCue.length ? Math.round(mean(invalidCue)) : '—'} ms</div></div>
              <div class="stat-card"><div class="stat-label">Efecto orientación</div><div class="stat-value accent">${effect} ms</div></div>`;
+  }
+  else if (currentTask === 'taskswitch') {
+    const valid = data.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
+    const repeat = valid.filter(t => t.condition === 'repeat').map(t=>t.rt);
+    const switchCond = valid.filter(t => t.condition === 'switch').map(t=>t.rt);
+    const switchCost = (repeat.length && switchCond.length) ? Math.round(mean(switchCond)-mean(repeat)) : '—';
+    html += `<div class="stat-card"><div class="stat-label">RT Repetición</div><div class="stat-value accent3">${repeat.length ? Math.round(mean(repeat)) : '—'} ms</div></div>
+             <div class="stat-card"><div class="stat-label">RT Cambio</div><div class="stat-value accent2">${switchCond.length ? Math.round(mean(switchCond)) : '—'} ms</div></div>
+             <div class="stat-card"><div class="stat-label">Coste de cambio</div><div class="stat-value accent">${switchCost} ms</div><div class="stat-sub">${valid.length} válidos</div></div>`;
   }
   container.innerHTML = html;
 }
@@ -311,6 +327,7 @@ function renderParticipantTable(data) {
   else if (currentTask === 'ant') columns.push('RT Cong', 'RT Incong', 'Conflicto', 'RT global');
   else if (currentTask === 'nback') columns.push("d'", 'Aciertos', 'FA', 'RT hits');
   else if (currentTask === 'posner') columns.push('RT Válido', 'RT Inválido', 'Efecto');
+  else if (currentTask === 'taskswitch') columns.push('RT Repetición', 'RT Cambio', 'Coste cambio');
   thead.innerHTML = '<tr>' + columns.map(c => `<th>${c}</th>`).join('') + '</tr>';
   const rows = participants.map(pid => {
     const pData = data.filter(d => d.participant_id === pid);
@@ -350,6 +367,11 @@ function renderParticipantTable(data) {
       const validCue = valid.filter(d => d.valid_trial === true).map(d=>d.rt);
       const invalidCue = valid.filter(d => d.valid_trial === false).map(d=>d.rt);
       extra = [validCue.length ? Math.round(mean(validCue)) : '—', invalidCue.length ? Math.round(mean(invalidCue)) : '—', (validCue.length && invalidCue.length) ? Math.round(mean(invalidCue)-mean(validCue)) : '—'];
+    } else if (currentTask === 'taskswitch') {
+      const valid = pData.filter(d => d.correct && d.rt >= 200 && d.rt <= 2000);
+      const repeat = valid.filter(d => d.condition === 'repeat').map(d=>d.rt);
+      const switchCond = valid.filter(d => d.condition === 'switch').map(d=>d.rt);
+      extra = [repeat.length ? Math.round(mean(repeat)) : '—', switchCond.length ? Math.round(mean(switchCond)) : '—', (repeat.length && switchCond.length) ? Math.round(mean(switchCond)-mean(repeat)) : '—'];
     }
     return '<tr>' + [pid.slice(-8), groupTag, trials, acc+'%', ...extra].map(c => `<td>${c}</td>`).join('') + '</tr>';
   }).join('');
@@ -408,8 +430,24 @@ function renderChart(data) {
       labels.push(pid.slice(-6)); vals.push((validCue.length && invalidCue.length) ? mean(invalidCue)-mean(validCue) : 0);
     });
     labelY = 'Efecto orientación (ms)'; color = '#e8ff4a';
-  } else { chartInstance = new Chart(ctx, { type:'bar', data:{ labels:['Sin datos'], datasets:[{data:[0]}] } }); return; }
-  chartInstance = new Chart(ctx, { type:'bar', data:{ labels, datasets:[{ label: labelY, data: vals, backgroundColor: color + 'cc', borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: true } });
+  } else if (currentTask === 'taskswitch') {
+    participants.forEach(pid => {
+      const pData = data.filter(d=>d.participant_id===pid);
+      const valid = pData.filter(d=>d.correct && d.rt>=200 && d.rt<=2000);
+      const repeat = valid.filter(d=>d.condition==='repeat').map(d=>d.rt);
+      const switchCond = valid.filter(d=>d.condition==='switch').map(d=>d.rt);
+      labels.push(pid.slice(-6)); vals.push((repeat.length && switchCond.length) ? mean(switchCond)-mean(repeat) : 0);
+    });
+    labelY = 'Coste de cambio (ms)'; color = '#e8ff4a';
+  } else {
+    chartInstance = new Chart(ctx, { type:'bar', data:{ labels:['Sin datos'], datasets:[{data:[0]}] } });
+    return;
+  }
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets:[{ label: labelY, data: vals, backgroundColor: color + 'cc', borderRadius: 3 }] },
+    options: { responsive: true, maintainAspectRatio: true }
+  });
 }
 
 function exportCSV() {
