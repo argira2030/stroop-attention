@@ -278,7 +278,7 @@ canvas { max-height: 260px; width: 100%; }
 // ============================================================
 const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);SUPABASE_KEY);
 //  SUP
 // ============================================================
 //  LOGIN / LOGOUT
@@ -288,28 +288,34 @@ async function login() {
   const password = document.getElementById('login-password').value;
   const errorDiv = document.getElementById('login-error');
   errorDiv.style.display = 'none';
+  
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    
     // Login exitoso: ocultar login y mostrar dashboard
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    // Inicializar dashboard (cargar datos, etc.)
-    loadData(); // esta función debe estar definida (la que ya tenías)
+    
+    // Cargar los datos del dashboard
+    if (typeof loadData === 'function') loadData();
+    
   } catch (err) {
     errorDiv.style.display = 'block';
     errorDiv.innerText = 'Error: ' + (err.message || 'Credenciales incorrectas');
   }
 }
 
+// ============================================================
+//  LOGOUT CORREGIDO
+// ============================================================
 async function logout() {
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-email').value = '';
   document.getElementById('login-password').value = '';
-}
-
+  }
 // ============================================================
 //  COMPROBAR SESIÓN AL CARGAR LA PÁGINA
 // ============================================================
@@ -633,19 +639,24 @@ async function exportPDF() {
   
 
 loadData();
+//  CHECK SESSION CORREGIDO
+// ============================================================
 async function checkSession() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
-    // Usuario ya logueado: mostrar dashboard directamente
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    loadData(); // función de carga de datos (debes tenerla)
+    if (typeof loadData === 'function') loadData();
   } else {
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('dashboard').style.display = 'none';
   }
 }
-  checkSession();
+
+// ============================================================
+//  EJECUTAR AL CARGAR LA PÁGINA
+// ============================================================
+checkSession();
 </script>
 </body>
 </html>
