@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-/* ==== */
+/* ===== ESTILOS COMPLETOS (mismos que Stroop/Flanker) ===== */
 :root {
   --bg: #0a0a0a;
   --surface: #111111;
@@ -93,8 +93,8 @@ body::before {
 }
 .stimulus-display {
   font-family: 'Syne', sans-serif;
-  font-size: 48px;
-  letter-spacing: 0.1em;
+  font-size: 64px;
+  font-weight: 800;
   color: var(--accent);
 }
 .response-grid {
@@ -159,7 +159,7 @@ canvas { max-height: 260px; width: 100%; }
   .stats-grid { grid-template-columns: 1fr; gap: 8px; }
   .stat-value { font-size: 20px; }
   .trial-row { grid-template-columns: 30px 60px 60px 50px; font-size: 9px; gap: 4px; }
-  .stimulus-display { font-size: 36px; }
+  .stimulus-display { font-size: 48px; }
 }
 </style>
 </head>
@@ -185,7 +185,7 @@ canvas { max-height: 260px; width: 100%; }
     <div class="intro-content">
       <div class="intro-tag">// Task Switching Paradigm</div>
       <h1 class="intro-title">Flexibilidad<br><span>Cognitiva</span><br>y Cambio</h1>
-      <p class="intro-desc">Aparecerá un número. Si el número es <strong>par</strong> presiona el botón IZQUIERDO. Si es <strong>impar</strong> presiona el botón DERECHO. A veces la regla cambiará sin aviso. Mantén la atención.</p>
+      <p class="intro-desc">Aparecerá un número. Si el número es <strong>par</strong> presiona el botón IZQUIERDO. Si es <strong>impar</strong> presiona el botón DERECHO. Responde lo más rápido posible.</p>
       <div class="ethics-box"><strong>⚖ Declaración ética</strong><span>Sin tracking. Datos en Supabase.</span></div>
       <div class="ethics-box" style="border-color:#333; display:flex; justify-content:space-between;">
         <div><strong style="color:var(--accent)">⬡ PARTICIPANT ID</strong><span id="pidDisplay" style="margin-left:12px;"></span></div>
@@ -247,7 +247,7 @@ canvas { max-height: 260px; width: 100%; }
 
 <script>
 // ============================================================
-//  SUPABASE CLIENT (sin conflicto de nombres)
+//  SUPABASE CLIENT
 // ============================================================
 const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
@@ -377,7 +377,6 @@ function respond(response) {
     trial.trialIndex = currentIdx + 1;
     try { localStorage.setItem('taskswitch_session', JSON.stringify({ participantId, group, trials })); } catch(e) {}
 
-    // Enviar a Supabase
     const record = {
       participant_id: participantId,
       cohort: group,
