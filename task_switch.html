@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>Task Switching · Flexibilidad Cognitiva</title>
+<title>Task Switching · Cognitive Flexibility</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
+/* ===== MISMOS ESTILOS QUE TUS OTRAS TAREAS ===== */
 :root {
   --bg: #0a0a0a;
   --surface: #111111;
@@ -17,7 +17,6 @@
   --accent: #e8ff4a;
   --accent2: #ff4a6e;
   --accent3: #4affda;
-  --switch-color: #c084fc;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -32,252 +31,151 @@ body::before {
   position: fixed;
   inset: 0;
   background-image:
-    linear-gradient(rgba(192,132,252,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(192,132,252,0.025) 1px, transparent 1px);
+    linear-gradient(rgba(232,255,74,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,255,74,0.03) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
   z-index: 0;
 }
-
-/* ── screens ── */
 .screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
 .screen.active { display: flex; flex-direction: column; }
-
-/* ── header ── */
 .header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 20px 32px; border-bottom: 1px solid var(--border);
-  background: rgba(10,10,10,0.85); backdrop-filter: blur(12px);
+  background: rgba(10,10,10,0.8); backdrop-filter: blur(10px);
   position: sticky; top: 0; z-index: 100;
 }
-.logo {
-  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px;
-  letter-spacing: 0.2em; text-transform: uppercase; color: var(--switch-color);
-}
-.badge {
-  font-size: 10px; letter-spacing: 0.15em; color: var(--muted);
-  text-transform: uppercase; border: 1px solid var(--border); padding: 4px 10px; border-radius: 2px;
-}
-
-/* ── intro ── */
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+.badge { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; border: 1px solid var(--border); padding: 4px 10px; border-radius: 2px; }
 #screen-intro { justify-content: center; align-items: center; padding: 40px 32px; }
 .intro-content { max-width: 600px; width: 100%; animation: fadeUp 0.6s ease both; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-.intro-tag { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--switch-color); margin-bottom: 16px; }
+.intro-tag { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
 .intro-title { font-family: 'Syne', sans-serif; font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.05; margin-bottom: 24px; }
-.intro-title span { color: var(--switch-color); }
-.intro-desc { font-size: 13px; line-height: 1.8; color: #aaa; margin-bottom: 28px; }
-
+.intro-title span { color: var(--accent); }
+.intro-desc { font-size: 13px; line-height: 1.8; color: #aaa; margin-bottom: 32px; }
 .ethics-box {
   border: 1px solid var(--border); background: var(--surface); padding: 16px 20px;
-  border-radius: 4px; font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 20px;
+  border-radius: 4px; font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 32px;
 }
-.ethics-box strong {
-  color: var(--accent3); display: block; margin-bottom: 4px;
-  letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px;
-}
-
-.rule-preview {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px;
-}
-.rule-card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
-  padding: 16px; text-align: center;
-}
-.rule-card .rule-emoji { font-size: 32px; margin-bottom: 8px; }
-.rule-card .rule-name {
-  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px;
-  color: var(--switch-color); margin-bottom: 4px;
-}
-.rule-card .rule-desc { font-size: 10px; color: var(--muted); line-height: 1.5; }
-
+.ethics-box strong { color: var(--accent3); display: block; margin-bottom: 4px; letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px; }
 .group-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
 .group-btn {
-  padding: 18px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  padding: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
   cursor: pointer; font-family: 'Space Mono', monospace; font-size: 12px; text-align: left;
   border-radius: 4px; transition: all 0.2s; position: relative; overflow: hidden;
 }
 .group-btn::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; }
 .group-btn.experimental::before { background: linear-gradient(135deg, rgba(232,255,74,0.08), transparent); }
-.group-btn.control::before    { background: linear-gradient(135deg, rgba(74,255,218,0.08), transparent); }
+.group-btn.control::before { background: linear-gradient(135deg, rgba(74,255,218,0.08), transparent); }
 .group-btn:hover::before, .group-btn.selected::before { opacity: 1; }
 .group-btn.selected.experimental { border-color: var(--accent); }
-.group-btn.selected.control      { border-color: var(--accent3); }
-.group-btn .g-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; margin-bottom: 4px; display: block; }
+.group-btn.selected.control { border-color: var(--accent3); }
+.group-btn .g-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 4px; display: block; }
 .group-btn.experimental .g-label { color: var(--accent); }
-.group-btn.control .g-label      { color: var(--accent3); }
+.group-btn.control .g-label { color: var(--accent3); }
 .group-btn .g-desc { color: var(--muted); font-size: 10px; line-height: 1.5; }
-
-.btn-primary {
-  width: 100%; padding: 16px; background: var(--switch-color); color: #000; border: none;
-  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px;
-  letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 4px;
-  transition: opacity 0.2s;
-}
+.btn-primary { width: 100%; padding: 16px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
 .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
-.btn-primary:not(:disabled):hover { opacity: 0.85; }
-
-/* ── task screen ── */
 #screen-task { align-items: center; justify-content: center; padding: 40px 32px; }
-.task-wrapper { max-width: 680px; width: 100%; }
-
-.progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 28px; overflow: hidden; }
-.progress-bar-fill { height: 100%; background: var(--switch-color); transition: width 0.3s ease; }
-
-.trial-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 32px; }
-
-/* rule indicator */
-.rule-indicator {
-  text-align: center; margin-bottom: 24px;
-}
-.rule-pill {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(192,132,252,0.12); border: 1px solid rgba(192,132,252,0.35);
-  border-radius: 20px; padding: 6px 18px;
-  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px;
-  color: var(--switch-color); letter-spacing: 0.08em;
-  transition: all 0.3s ease;
-}
-.rule-pill.switching {
-  background: rgba(255,74,110,0.12); border-color: rgba(255,74,110,0.5);
-  color: var(--accent2);
-  animation: switchPulse 0.4s ease;
-}
-@keyframes switchPulse {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.08); }
-  100% { transform: scale(1); }
-}
-.rule-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-
-/* stimulus */
+.task-wrapper { max-width: 700px; width: 100%; }
+.progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 32px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+.trial-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 48px; }
+.stroop-stage-label { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); text-align: center; margin-bottom: 12px; }
 .stimulus-area {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-height: 200px; margin-bottom: 40px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  margin-bottom: 32px;
 }
-.fixation-cross { font-size: 36px; color: var(--muted); user-select: none; }
-
-/* the big stimulus card */
-.stim-card {
-  display: none;
-  background: var(--surface); border: 2px solid var(--border);
-  border-radius: 12px; padding: 36px 48px; text-align: center;
-  min-width: 200px;
-  animation: cardAppear 0.12s ease;
+.stimulus-display {
+  font-family: 'Syne', sans-serif;
+  font-size: 48px;
+  letter-spacing: 0.1em;
+  color: var(--accent);
 }
-@keyframes cardAppear { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
-.stim-card.visible { display: block; }
-
-.stim-number {
-  font-family: 'Syne', sans-serif; font-weight: 800;
-  font-size: 96px; line-height: 1;
-  margin-bottom: 12px;
-  transition: color 0.15s;
+.response-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 20px;
 }
-.stim-number.odd  { color: var(--accent); }
-.stim-number.even { color: var(--accent3); }
-.stim-number.small { color: #ff9f43; }
-.stim-number.large { color: var(--switch-color); }
-
-.stim-meta { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
-
-/* response buttons */
-.response-grid { display: flex; justify-content: center; gap: 20px; }
 .resp-btn {
-  flex: 1; max-width: 240px;
-  padding: 18px 24px; border: 2px solid var(--border); background: var(--surface);
-  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px;
-  cursor: pointer; border-radius: 8px; text-transform: uppercase;
-  transition: all 0.15s; color: var(--text);
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 16px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 60px;
+  transition: all 0.15s;
 }
-.resp-btn .resp-key { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; font-weight: 400; }
-.resp-btn.left  { border-color: var(--accent);  color: var(--accent); }
-.resp-btn.right { border-color: var(--accent2); color: var(--accent2); }
+.resp-btn.par { color: var(--accent3); border-color: var(--accent3); }
+.resp-btn.impar { color: var(--accent2); border-color: var(--accent2); }
 .resp-btn:active { transform: scale(0.96); }
-.resp-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-
-/* feedback flash */
-.feedback-flash { position: fixed; inset: 0; pointer-events: none; z-index: 200; opacity: 0; transition: opacity 0.08s; }
-.feedback-flash.correct { background: rgba(74,255,218,0.06); opacity: 1; }
-.feedback-flash.wrong   { background: rgba(255,74,110,0.08); opacity: 1; }
-
-/* switch indicator badge */
-.switch-badge {
-  display: inline-block; font-size: 9px; letter-spacing: 0.15em;
-  text-transform: uppercase; padding: 3px 8px; border-radius: 3px;
-  font-weight: 700; margin-left: 8px;
-  background: rgba(255,74,110,0.15); color: var(--accent2); border: 1px solid rgba(255,74,110,0.3);
-}
-.repeat-badge {
-  display: inline-block; font-size: 9px; letter-spacing: 0.15em;
-  text-transform: uppercase; padding: 3px 8px; border-radius: 3px;
-  font-weight: 700; margin-left: 8px;
-  background: rgba(74,255,218,0.1); color: var(--accent3); border: 1px solid rgba(74,255,218,0.25);
-}
-
-/* ── results ── */
+.feedback-flash { position: fixed; inset: 0; pointer-events: none; z-index: 200; opacity: 0; transition: opacity 0.1s; }
+.feedback-flash.correct { background: rgba(74,255,218,0.07); opacity: 1; }
+.feedback-flash.wrong { background: rgba(255,74,110,0.07); opacity: 1; }
+.rt-ticker { position: fixed; top: 80px; right: 32px; font-size: 11px; color: var(--muted); background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 20px; }
 #screen-results { padding: 40px 32px; align-items: center; }
-.results-content { max-width: 860px; width: 100%; }
-.results-title { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; margin-bottom: 4px; }
-.results-subtitle { font-size: 11px; color: var(--muted); margin-bottom: 32px; }
-
-.stats-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px; margin-bottom: 28px;
-}
+.results-content { max-width: 800px; width: 100%; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 32px; }
 .stat-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 4px; }
-.stat-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-.stat-value { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; }
-.stat-value.accent  { color: var(--accent); }
+.stat-label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
+.stat-value.accent { color: var(--accent); }
 .stat-value.accent2 { color: var(--accent2); }
 .stat-value.accent3 { color: var(--accent3); }
-.stat-value.purple  { color: var(--switch-color); }
-
 .chart-section { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 24px; }
-.chart-title { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
-
+canvas { max-height: 260px; width: 100%; }
 .trial-log { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 24px; }
 .trial-log-header { padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
-.trial-log-body { max-height: 220px; overflow-y: auto; font-size: 11px; }
-.trial-row { display: grid; grid-template-columns: 36px 64px 64px 72px 56px 56px; padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.03); align-items: center; gap: 8px; }
-.trial-row.header { color: var(--muted); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; background: rgba(255,255,255,0.02); }
-
+.trial-log-body { max-height: 200px; overflow-y: auto; font-size: 11px; }
+.trial-row { display: grid; grid-template-columns: 40px 80px 80px 60px; padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.03); align-items: center; gap: 8px; }
+.correct-dot { color: var(--success); }
+.wrong-dot { color: var(--danger); }
 .paper-box { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
-.paper-box h3 { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
-.paper-text { font-size: 12px; line-height: 2; color: #ccc; white-space: pre-wrap; font-family: 'Space Mono', monospace; }
-
+.paper-text { font-size: 12px; line-height: 1.9; color: #ccc; white-space: pre-wrap; }
 .action-row { display: flex; gap: 12px; flex-wrap: wrap; }
-.btn-export { flex: 1; min-width: 140px; padding: 14px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
-.btn-export.teal { background: var(--accent3); }
-.btn-outline { flex: 1; min-width: 140px; padding: 14px; background: transparent; color: var(--text); border: 1px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
-.btn-outline:hover { border-color: var(--switch-color); color: var(--switch-color); }
-
-/* ── keyboard hint ── */
-.kb-hint { text-align: center; font-size: 10px; color: var(--muted); margin-top: 16px; letter-spacing: 0.08em; }
-
-/* ── responsive ── */
+.btn-export { flex: 1; min-width: 140px; padding: 14px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-outline { flex: 1; min-width: 140px; padding: 14px; background: transparent; color: var(--text); border: 1px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.priming-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(12px);
+  z-index: 300; display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+}
+.priming-overlay.active { opacity: 1; visibility: visible; }
+.priming-card { max-width: 500px; background: var(--surface); border: 1px solid var(--accent); padding: 40px 32px; border-radius: 12px; text-align: center; }
+.priming-icon { font-size: 48px; margin-bottom: 20px; }
+.priming-message { font-size: 24px; font-weight: 700; margin-bottom: 16px; color: var(--accent); }
+.priming-sub { font-size: 13px; color: var(--muted); }
+.priming-progress { margin-top: 28px; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.priming-progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.2s linear; }
 @media (max-width: 680px) {
-  .header { padding: 16px 20px; }
-  #screen-intro { padding: 24px 20px; }
-  .rule-preview { grid-template-columns: 1fr 1fr; gap: 8px; }
-  .group-row { grid-template-columns: 1fr; }
-  .stim-number { font-size: 72px; }
-  .stim-card { padding: 24px 32px; }
-  .resp-btn { font-size: 13px; padding: 14px 16px; }
-  .stats-grid { grid-template-columns: 1fr 1fr; }
-  .trial-row { grid-template-columns: 28px 50px 52px 60px 44px 44px; font-size: 9px; gap: 4px; padding: 6px 10px; }
-  #screen-results { padding: 24px 16px; }
+  .stats-grid { grid-template-columns: 1fr; gap: 8px; }
+  .stat-value { font-size: 20px; }
+  .trial-row { grid-template-columns: 30px 60px 60px 50px; font-size: 9px; gap: 4px; }
+  .stimulus-display { font-size: 36px; }
 }
 </style>
 </head>
 <body>
 
 <div class="feedback-flash" id="feedbackFlash"></div>
+<div id="primingOverlay" class="priming-overlay">
+  <div class="priming-card">
+    <div class="priming-icon">🔄</div>
+    <div class="priming-message" id="primingMsg">Focus attention</div>
+    <div class="priming-sub" id="primingSub">Prepare for Task Switching</div>
+    <div class="priming-progress"><div class="priming-progress-fill" id="primingFill"></div></div>
+  </div>
+</div>
 
-<!-- ═══════════════════════════════════════════
-     INTRO SCREEN
-═══════════════════════════════════════════ -->
+<!-- INTRO -->
 <div class="screen active" id="screen-intro">
   <div class="header">
     <div class="logo">TASK SWITCH · HCI</div>
@@ -286,57 +184,24 @@ body::before {
   <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
     <div class="intro-content">
       <div class="intro-tag">// Task Switching Paradigm</div>
-      <h1 class="intro-title">Flexibilidad<br><span>Cognitiva</span></h1>
-      <p class="intro-desc">
-        Verás un número del 1 al 9 (sin el 5). Deberás clasificarlo según la <strong style="color:var(--switch-color)">regla activa</strong>, que cambia cada ciertos ensayos. La regla aparece siempre en pantalla — ¡pero cambiar de tarea tiene un coste cognitivo real!
-      </p>
-
-      <div class="rule-preview">
-        <div class="rule-card">
-          <div class="rule-emoji">🔢</div>
-          <div class="rule-name">PARIDAD</div>
-          <div class="rule-desc">¿El número es <strong>PAR</strong> o <strong>IMPAR</strong>?</div>
-        </div>
-        <div class="rule-card">
-          <div class="rule-emoji">📏</div>
-          <div class="rule-name">MAGNITUD</div>
-          <div class="rule-desc">¿El número es <strong>MAYOR</strong> o <strong>MENOR</strong> que 5?</div>
-        </div>
+      <h1 class="intro-title">Flexibilidad<br><span>Cognitiva</span><br>y Cambio</h1>
+      <p class="intro-desc">Aparecerá un número. Si el número es <strong>par</strong> presiona el botón IZQUIERDO. Si es <strong>impar</strong> presiona el botón DERECHO. A veces la regla cambiará sin aviso. Mantén la atención.</p>
+      <div class="ethics-box"><strong>⚖ Declaración ética</strong><span>Sin tracking. Datos en Supabase.</span></div>
+      <div class="ethics-box" style="border-color:#333; display:flex; justify-content:space-between;">
+        <div><strong style="color:var(--accent)">⬡ PARTICIPANT ID</strong><span id="pidDisplay" style="margin-left:12px;"></span></div>
+        <button onclick="regenerateID()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:4px 8px;">↺</button>
       </div>
-
-      <div class="ethics-box">
-        <strong>⚖ Ethical Statement</strong>
-        Sin tracking externo. Datos almacenados en Supabase. Código abierto — Jose Ranero García (ORCID: 0009-0009-3168-6379)
-      </div>
-
-      <div class="ethics-box" style="border-color:#333; display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <strong style="color:var(--switch-color)">⬡ PARTICIPANT ID</strong>
-          <span id="pidDisplay" style="margin-left:12px; font-size:12px;"></span>
-        </div>
-        <button onclick="regenerateID()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:4px 8px;cursor:pointer;">↺</button>
-      </div>
-
-      <div style="margin-bottom:12px; font-size:11px; color:var(--muted);">Selecciona grupo de asignación</div>
+      <div style="margin-bottom:16px; font-size:11px; color:var(--muted);">Selecciona grupo</div>
       <div class="group-row">
-        <button class="group-btn experimental" onclick="selectGroup('experimental')" id="btn-exp">
-          <span class="g-label">Experimental</span>
-          <span class="g-desc">Recibe instrucción de priming antes de la tarea</span>
-        </button>
-        <button class="group-btn control" onclick="selectGroup('control')" id="btn-ctrl">
-          <span class="g-label">Control</span>
-          <span class="g-desc">Secuencia directa sin preparación adicional</span>
-        </button>
+        <button class="group-btn experimental" onclick="selectGroup('experimental')" id="btn-exp"><span class="g-label">Experimental</span><span class="g-desc">Recibe preparación</span></button>
+        <button class="group-btn control" onclick="selectGroup('control')" id="btn-ctrl"><span class="g-label">Control</span><span class="g-desc">Secuencia directa</span></button>
       </div>
-
       <button class="btn-primary" id="startBtn" disabled onclick="startStudy()">Comenzar →</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     TASK SCREEN
-═══════════════════════════════════════════ -->
+<!-- TASK -->
 <div class="screen" id="screen-task">
   <div class="header">
     <div class="logo">TASK SWITCH · HCI</div>
@@ -344,631 +209,271 @@ body::before {
   </div>
   <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:32px 24px;">
     <div class="task-wrapper">
-      <div class="progress-bar-wrap">
-        <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
-      </div>
-
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>
       <div class="trial-meta">
         <span id="trialCounter">Ensayo 0 / 0</span>
-        <span id="trialTypeBadge"></span>
+        <span id="phaseDesc">Regla: Par/Izq · Impar/Der</span>
       </div>
-
-      <!-- rule indicator -->
-      <div class="rule-indicator">
-        <div class="rule-pill" id="rulePill">
-          <div class="rule-dot"></div>
-          <span id="rulePillText">—</span>
-        </div>
-      </div>
-
-      <!-- stimulus -->
       <div class="stimulus-area">
-        <div class="fixation-cross" id="fixation">+</div>
-        <div class="stim-card" id="stimCard">
-          <div class="stim-number" id="stimNumber">?</div>
-          <div class="stim-meta" id="stimMeta"></div>
-        </div>
+        <div id="stimulus" class="stimulus-display">?</div>
       </div>
-
-      <!-- response buttons -->
       <div class="response-grid">
-        <button class="resp-btn left" id="btnLeft" onclick="respond('left')" disabled>
-          <span id="btnLeftLabel">←</span>
-          <span class="resp-key">← tecla</span>
-        </button>
-        <button class="resp-btn right" id="btnRight" onclick="respond('right')" disabled>
-          <span id="btnRightLabel">→</span>
-          <span class="resp-key">tecla →</span>
-        </button>
+        <button class="resp-btn par" onclick="respond('left')">PAR (IZQUIERDA)</button>
+        <button class="resp-btn impar" onclick="respond('right')">IMPAR (DERECHA)</button>
       </div>
-
-      <div class="kb-hint">Teclado: ← → | Móvil: botones</div>
     </div>
   </div>
+  <div class="rt-ticker" id="rtTicker"></div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     RESULTS SCREEN
-═══════════════════════════════════════════ -->
+<!-- RESULTS -->
 <div class="screen" id="screen-results">
-  <div class="header">
-    <div class="logo">TASK SWITCH · HCI</div>
-    <div class="badge">Analysis Complete</div>
-  </div>
+  <div class="header"><div class="logo">TASK SWITCH · HCI</div><div class="badge">Análisis completo</div></div>
   <div style="padding:40px 32px; display:flex; justify-content:center;">
     <div class="results-content">
-      <h2 class="results-title">Resultados</h2>
-      <p class="results-subtitle" id="resultsMeta"></p>
-
+      <h2>Resultados</h2><p id="resultsMeta"></p>
       <div class="stats-grid" id="statsGrid"></div>
-
-      <div class="chart-section">
-        <div class="chart-title">// Switch Cost — Tiempo de reacción medio (ms)</div>
-        <canvas id="rtChart" height="200"></canvas>
-      </div>
-
-      <div class="chart-section">
-        <div class="chart-title">// Distribución RT por tipo de ensayo</div>
-        <canvas id="distChart" height="200"></canvas>
-      </div>
-
-      <div class="trial-log">
-        <div class="trial-log-header">// Raw Trial Log (ensayos principales)</div>
-        <div class="trial-log-body">
-          <div class="trial-row header">
-            <span>#</span><span>Regla</span><span>Núm.</span><span>RT(ms)</span><span>Tipo</span><span>OK</span>
-          </div>
-          <div id="trialLog"></div>
-        </div>
-      </div>
-
-      <div class="paper-box">
-        <h3>// Texto APA</h3>
-        <div class="paper-text" id="paperText"></div>
-      </div>
-
+      <div class="chart-section"><canvas id="taskChart" height="200"></canvas></div>
+      <div class="trial-log"><div class="trial-log-header">// Ensayos</div><div class="trial-log-body"><div class="trial-row header"><span>#</span><span>Estímulo</span><span>Respuesta</span><span>RT(ms)</span><span>Correcto</span></div><div id="trialLog"></div></div></div>
+      <div class="paper-box"><h3>// Informe</h3><div class="paper-text" id="paperText"></div></div>
       <div class="action-row">
-        <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
-        <button class="btn-export teal" onclick="exportJSON()">↓ Export JSON</button>
-        <button class="btn-outline" onclick="resetStudy()">↺ Nueva Sesión</button>
-        <button class="btn-outline" onclick="window.location.href='index.html'" style="border-color:var(--switch-color);color:var(--switch-color);">← Volver al Lab</button>
+        <button class="btn-export" onclick="exportCSV()">↓ CSV</button>
+        <button class="btn-export" style="background:var(--accent3);color:#000;" onclick="exportJSON()">↓ JSON</button>
+        <button class="btn-outline" onclick="resetStudy()">↺ Nueva sesión</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     JAVASCRIPT
-═══════════════════════════════════════════ -->
 <script>
-// ─────────────────────────────────────────────
-//  SUPABASE
-// ─────────────────────────────────────────────
+// ============================================================
+//  SUPABASE CLIENT (sin conflicto de nombres)
+// ============================================================
 const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
-const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function sendTrial(t) {
+async function sendTrial(trial) {
   try {
-    await _supabase.from('taskswitch_trials').insert({
-      participant_id: participantId,
-      cohort: group,
-      trial_index: t.trialIndex,
-      phase: t.phase,
-      rule: t.rule,
-      stimulus: t.stimulus,
-      correct_response: t.correctResponse,
-      response: t.response,
-      rt_ms: Math.round(t.rt),
-      correct: t.correct,
-      is_switch: t.isSwitch,
-      prev_rule: t.prevRule,
-      timestamp: t.timestamp
-    });
-  } catch(e) { console.warn('Supabase error:', e); }
+    const { error } = await supabaseClient.from('task_switch_trials').insert(trial);
+    if (error) console.error('Error al insertar:', error);
+  } catch(e) { console.warn(e); }
 }
 
-// ─────────────────────────────────────────────
-//  CONFIG
-// ─────────────────────────────────────────────
-const PRACTICE_TRIALS = 8;
-const MAIN_TRIALS     = 64;
-const RULE_RUN_MIN    = 3;   // minimum repeats before possible switch
-const RULE_RUN_MAX    = 6;   // maximum repeats before forced switch
-const NUMBERS         = [1,2,3,4,6,7,8,9]; // exclude 5
-const RULES           = ['parity','magnitude'];
-const ISI_BASE        = 300;
-const ISI_JITTER      = 300;
-
-// ─────────────────────────────────────────────
-//  STATE
-// ─────────────────────────────────────────────
-let participantId = generateID();
+// ============================================================
+//  PARÁMETROS
+// ============================================================
+const PRACTICE_TRIALS = 10;
+const MAIN_TRIALS = 80;
+let participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
 let group = null;
 let trials = [];
 let currentIdx = 0;
 let stimStart = 0;
 let waiting = false;
-let currentRule = null;
-let prevRule = null;
-let ruleRunCount = 0;
-let nextSwitchAt = 0;
-let trialTimer = null;
-let mainTrialLog = [];
+let fixationTimer = null;
 
-// ─────────────────────────────────────────────
-//  INIT
-// ─────────────────────────────────────────────
-function generateID() {
-  return 'TS-' + Date.now().toString(36).slice(-5).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
-}
-function regenerateID() {
-  participantId = generateID();
-  document.getElementById('pidDisplay').textContent = participantId;
-}
-document.getElementById('pidDisplay').textContent = participantId;
-
-function selectGroup(g) {
-  group = g;
-  document.getElementById('btn-exp').classList.toggle('selected', g === 'experimental');
-  document.getElementById('btn-ctrl').classList.toggle('selected', g === 'control');
-  document.getElementById('startBtn').disabled = false;
+function generateStimulus() {
+  return Math.floor(Math.random() * 9) + 1; // 1-9
 }
 
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  window.scrollTo(0,0);
+function isEven(n) { return n % 2 === 0; }
+
+function makeTrial(phase) {
+  const stimulus = generateStimulus();
+  const expectedResponse = isEven(stimulus) ? 'left' : 'right';
+  return {
+    stimulus: stimulus,
+    correctResponse: expectedResponse,
+    phase: phase,
+    rt: null,
+    correct: null,
+    response: null,
+    jitter: null,
+    timestamp: null,
+    trialIndex: null
+  };
 }
 
-// ─────────────────────────────────────────────
-//  BUILD TRIALS
-// ─────────────────────────────────────────────
 function buildTrials() {
   let list = [];
-
-  // Decide rule sequence
-  let rule = RULES[Math.floor(Math.random() * RULES.length)];
-  let runLeft = RULE_RUN_MIN + Math.floor(Math.random() * (RULE_RUN_MAX - RULE_RUN_MIN + 1));
-  let prev = null;
-  let runCount = 0;
-
-  const total = PRACTICE_TRIALS + MAIN_TRIALS;
-
-  for (let i = 0; i < total; i++) {
-    if (runLeft <= 0) {
-      prev = rule;
-      do { rule = RULES[Math.floor(Math.random() * RULES.length)]; } while (rule === prev);
-      runLeft = RULE_RUN_MIN + Math.floor(Math.random() * (RULE_RUN_MAX - RULE_RUN_MIN + 1));
-    }
-
-    const num = NUMBERS[Math.floor(Math.random() * NUMBERS.length)];
-    const isSwitch = (prev !== null && rule !== prev && runCount === 0);
-    // determine correct response
-    let correctResponse;
-    if (rule === 'parity') {
-      correctResponse = (num % 2 === 0) ? 'left' : 'right'; // left=PAR, right=IMPAR
-    } else {
-      correctResponse = (num < 5) ? 'left' : 'right'; // left=MENOR, right=MAYOR
-    }
-
-    list.push({
-      trialIndex: i,
-      phase: i < PRACTICE_TRIALS ? 'practice' : 'main',
-      rule: rule,
-      prevRule: prev,
-      isSwitch: (prev !== null && rule !== prev) && runLeft === (RULE_RUN_MIN + Math.floor(Math.random() * (RULE_RUN_MAX - RULE_RUN_MIN + 1)) - 1),
-      stimulus: num,
-      correctResponse: correctResponse,
-      response: null,
-      rt: null,
-      correct: null,
-      timestamp: null
-    });
-
-    runLeft--;
-    runCount++;
-    if (runLeft <= 0) { runCount = 0; }
+  for (let i = 0; i < PRACTICE_TRIALS; i++) list.push(makeTrial('practice'));
+  for (let i = 0; i < MAIN_TRIALS; i++) list.push(makeTrial('main'));
+  // Mezclar
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
   }
-
-  // Fix isSwitch properly with a second pass
-  let lastRule = null;
-  for (let i = 0; i < list.length; i++) {
-    list[i].isSwitch = (lastRule !== null && list[i].rule !== lastRule);
-    lastRule = list[i].rule;
-  }
-
   return list;
 }
 
-// ─────────────────────────────────────────────
-//  START
-// ─────────────────────────────────────────────
-function startStudy() {
+function startCoreTask() {
   trials = buildTrials();
   currentIdx = 0;
-  mainTrialLog = [];
   showScreen('screen-task');
-  updateButtons();
   nextTrial();
 }
 
-// ─────────────────────────────────────────────
-//  TRIAL FLOW
-// ─────────────────────────────────────────────
 function nextTrial() {
   if (currentIdx >= trials.length) { finishTask(); return; }
-
   const trial = trials[currentIdx];
   const total = trials.length;
-
-  // progress
   document.getElementById('progressBar').style.width = (currentIdx / total * 100) + '%';
-  document.getElementById('trialCounter').textContent = `Ensayo ${currentIdx + 1} / ${total}`;
-  document.getElementById('phaseLabel').textContent = trial.phase === 'practice' ? 'Práctica' : 'Principal';
+  document.getElementById('trialCounter').innerHTML = `Ensayo ${currentIdx+1} / ${total}`;
+  const isPractice = trial.phase === 'practice';
+  document.getElementById('phaseLabel').innerText = isPractice ? 'Práctica' : 'Fase principal';
+  document.getElementById('phaseDesc').innerHTML = `Número: ?`;
 
-  // switch badge
-  const badge = document.getElementById('trialTypeBadge');
-  if (currentIdx === 0 || !trial.isSwitch) {
-    badge.innerHTML = `<span class="repeat-badge">REPEAT</span>`;
-  } else {
-    badge.innerHTML = `<span class="switch-badge">SWITCH !</span>`;
-  }
-
-  // rule pill
-  updateRulePill(trial);
-  updateButtons();
-
-  // disable buttons during ISI
-  setButtonsEnabled(false);
+  setResponseState(false);
   waiting = false;
-
-  // hide stimulus
-  document.getElementById('fixation').style.display = 'block';
-  document.getElementById('stimCard').classList.remove('visible');
-
-  // ISI → show stimulus
-  const isi = ISI_BASE + Math.random() * ISI_JITTER;
-  if (trialTimer) clearTimeout(trialTimer);
-  trialTimer = setTimeout(() => {
-    showStimulus(trial);
-  }, isi);
+  document.getElementById('stimulus').innerHTML = '?';
+  const jitter = Math.round(Math.random() * 400 + 400);
+  if (trial.phase === 'main') trial.jitter = jitter;
+  if (fixationTimer) clearTimeout(fixationTimer);
+  fixationTimer = setTimeout(() => {
+    document.getElementById('stimulus').innerHTML = trial.stimulus;
+    stimStart = performance.now();
+    setResponseState(true);
+    waiting = true;
+  }, jitter);
 }
 
-function showStimulus(trial) {
-  document.getElementById('fixation').style.display = 'none';
-
-  const numEl  = document.getElementById('stimNumber');
-  const metaEl = document.getElementById('stimMeta');
-  const card   = document.getElementById('stimCard');
-
-  numEl.textContent = trial.stimulus;
-
-  // color by rule
-  numEl.className = 'stim-number';
-  if (trial.rule === 'parity') {
-    numEl.classList.add(trial.stimulus % 2 === 0 ? 'even' : 'odd');
-    metaEl.textContent = trial.rule === 'parity' ? '¿PAR o IMPAR?' : '';
-  } else {
-    numEl.classList.add(trial.stimulus < 5 ? 'small' : 'large');
-    metaEl.textContent = '¿MENOR o MAYOR que 5?';
-  }
-
-  card.classList.add('visible');
-  setButtonsEnabled(true);
-  waiting = true;
-  stimStart = performance.now();
+function setResponseState(active) {
+  document.querySelectorAll('.resp-btn').forEach(btn => btn.disabled = !active);
+  waiting = active;
 }
 
-function updateRulePill(trial) {
-  const pill = document.getElementById('rulePill');
-  const text = document.getElementById('rulePillText');
-  pill.classList.remove('switching');
-
-  if (trial.rule === 'parity') {
-    text.textContent = '🔢 PARIDAD';
-  } else {
-    text.textContent = '📏 MAGNITUD';
-  }
-
-  if (trial.isSwitch && currentIdx > 0) {
-    pill.classList.add('switching');
-  }
-}
-
-function updateButtons() {
-  const trial = currentIdx < trials.length ? trials[currentIdx] : null;
-  if (!trial) return;
-
-  const leftLabel  = document.getElementById('btnLeftLabel');
-  const rightLabel = document.getElementById('btnRightLabel');
-
-  if (trial.rule === 'parity') {
-    leftLabel.textContent  = '← PAR';
-    rightLabel.textContent = 'IMPAR →';
-  } else {
-    leftLabel.textContent  = '← MENOR';
-    rightLabel.textContent = 'MAYOR →';
-  }
-}
-
-function setButtonsEnabled(enabled) {
-  document.getElementById('btnLeft').disabled  = !enabled;
-  document.getElementById('btnRight').disabled = !enabled;
-}
-
-// ─────────────────────────────────────────────
-//  RESPOND
-// ─────────────────────────────────────────────
-function respond(side) {
+function respond(response) {
   if (!waiting) return;
-  waiting = false;
-  setButtonsEnabled(false);
-
+  const rt = Math.round(performance.now() - stimStart);
   const trial = trials[currentIdx];
-  const rt    = performance.now() - stimStart;
-  const correct = (side === trial.correctResponse);
-
-  trial.response  = side;
-  trial.rt        = rt;
-  trial.correct   = correct;
-  trial.timestamp = new Date().toISOString();
-
-  // flash feedback
+  const correct = (response === trial.correctResponse);
   const flash = document.getElementById('feedbackFlash');
   flash.className = 'feedback-flash ' + (correct ? 'correct' : 'wrong');
-  setTimeout(() => { flash.className = 'feedback-flash'; }, 160);
+  setTimeout(() => flash.className = 'feedback-flash', 200);
 
-  // log main trials
-  if (trial.phase === 'main') {
-    mainTrialLog.push(trial);
-  }
-
-  // send to Supabase (async, non-blocking)
-  sendTrial(trial);
-
-  currentIdx++;
-  setTimeout(nextTrial, 200);
-}
-
-// keyboard
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'ArrowLeft')  respond('left');
-  if (e.key === 'ArrowRight') respond('right');
-});
-
-// ─────────────────────────────────────────────
-//  FINISH
-// ─────────────────────────────────────────────
-function finishTask() {
-  if (trialTimer) clearTimeout(trialTimer);
-  buildResults();
-  showScreen('screen-results');
-}
-
-// ─────────────────────────────────────────────
-//  RESULTS
-// ─────────────────────────────────────────────
-function avg(arr) {
-  if (!arr.length) return 0;
-  return arr.reduce((a,b) => a+b, 0) / arr.length;
-}
-
-function buildResults() {
-  const main = mainTrialLog;
-
-  if (!main.length) {
-    document.getElementById('statsGrid').innerHTML = '<p style="color:var(--muted)">Sin datos de ensayos principales.</p>';
+  if (rt < 200 || rt > 2000) {
+    document.getElementById('rtTicker').innerHTML = `⚠️ Respuesta inválida (${rt} ms) — repite`;
+    setTimeout(() => {
+      waiting = false;
+      setResponseState(false);
+      document.getElementById('stimulus').innerHTML = trial.stimulus;
+      stimStart = performance.now();
+      setResponseState(true);
+      waiting = true;
+    }, 800);
     return;
   }
 
-  const switchTrials  = main.filter(t => t.isSwitch);
-  const repeatTrials  = main.filter(t => !t.isSwitch);
-  const correctTrials = main.filter(t => t.correct);
-  const wrongTrials   = main.filter(t => !t.correct);
+  document.getElementById('rtTicker').innerHTML = rt + ' ms';
 
-  const switchRT  = avg(switchTrials.filter(t=>t.correct).map(t=>t.rt));
-  const repeatRT  = avg(repeatTrials.filter(t=>t.correct).map(t=>t.rt));
-  const switchCost = switchRT - repeatRT;
+  if (trial.phase === 'main') {
+    trial.rt = rt;
+    trial.correct = correct;
+    trial.response = response;
+    trial.timestamp = new Date().toISOString();
+    trial.viewport = `${window.innerWidth}x${window.innerHeight}`;
+    trial.deviceType = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
+    trial.trialIndex = currentIdx + 1;
+    try { localStorage.setItem('taskswitch_session', JSON.stringify({ participantId, group, trials })); } catch(e) {}
 
-  const accuracy     = (correctTrials.length / main.length * 100).toFixed(1);
-  const switchAcc    = switchTrials.length  ? (switchTrials.filter(t=>t.correct).length  / switchTrials.length  * 100).toFixed(1) : 'N/A';
-  const repeatAcc    = repeatTrials.length  ? (repeatTrials.filter(t=>t.correct).length  / repeatTrials.length  * 100).toFixed(1) : 'N/A';
-  const overallRT    = avg(correctTrials.map(t=>t.rt)).toFixed(0);
+    // Enviar a Supabase
+    const record = {
+      participant_id: participantId,
+      cohort: group,
+      trial: trial.trialIndex,
+      condition: trial.correctResponse, // 'repeat' o 'switch' (simplificado)
+      rt_ms: trial.rt,
+      correct: trial.correct,
+      isi_jitter_ms: trial.jitter,
+      viewport: trial.viewport,
+      device_type: trial.deviceType,
+      timestamp: trial.timestamp
+    };
+    sendTrial(record);
+  }
+  currentIdx++;
+  setTimeout(() => nextTrial(), 280);
+}
 
-  // Perseveration errors: wrong AND previous rule would have been correct
-  const persevErrors = main.filter(t => {
-    if (t.correct) return false;
-    if (!t.isSwitch || !t.prevRule) return false;
-    let prevCorrect;
-    if (t.prevRule === 'parity') {
-      prevCorrect = (t.stimulus % 2 === 0) ? 'left' : 'right';
-    } else {
-      prevCorrect = (t.stimulus < 5) ? 'left' : 'right';
-    }
-    return t.response === prevCorrect;
-  }).length;
+function finishTask() {
+  const mainTrials = trials.filter(t => t.phase === 'main');
+  const correctTrials = mainTrials.filter(t => t.correct);
+  const acc = (correctTrials.length / mainTrials.length * 100).toFixed(1);
+  const rtAll = mainTrials.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000).map(t=>t.rt);
+  const meanRT = rtAll.length ? Math.round(rtAll.reduce((a,b)=>a+b,0)/rtAll.length) : 0;
 
-  // meta
-  document.getElementById('resultsMeta').textContent =
-    `Participante ${participantId} · Grupo ${group} · ${main.length} ensayos principales · ${new Date().toLocaleDateString()}`;
-
-  // stats cards
   document.getElementById('statsGrid').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Precisión global</div><div class="stat-value accent">${accuracy}%</div></div>
-    <div class="stat-card"><div class="stat-label">RT global (ms)</div><div class="stat-value accent3">${overallRT}</div></div>
-    <div class="stat-card"><div class="stat-label">RT Switch (ms)</div><div class="stat-value accent2">${switchRT.toFixed(0)}</div></div>
-    <div class="stat-card"><div class="stat-label">RT Repeat (ms)</div><div class="stat-value purple">${repeatRT.toFixed(0)}</div></div>
-    <div class="stat-card"><div class="stat-label">Switch Cost (ms)</div><div class="stat-value ${switchCost > 0 ? 'accent2' : 'accent3'}">${switchCost > 0 ? '+' : ''}${switchCost.toFixed(0)}</div></div>
-    <div class="stat-card"><div class="stat-label">Errores perseveración</div><div class="stat-value accent2">${persevErrors}</div></div>
-    <div class="stat-card"><div class="stat-label">Precisión Switch</div><div class="stat-value accent2">${switchAcc}%</div></div>
-    <div class="stat-card"><div class="stat-label">Precisión Repeat</div><div class="stat-value accent3">${repeatAcc}%</div></div>
+    <div class="stat-card"><div class="stat-label">Precisión</div><div class="stat-value accent">${acc}%</div></div>
+    <div class="stat-card"><div class="stat-label">RT medio (correctos)</div><div class="stat-value accent3">${meanRT} ms</div></div>
+    <div class="stat-card"><div class="stat-label">Ensayos totales</div><div class="stat-value">${mainTrials.length}</div></div>
   `;
-
-  // Chart 1: bar — switch vs repeat RT
-  const rtCtx = document.getElementById('rtChart').getContext('2d');
-  new Chart(rtCtx, {
+  const ctx = document.getElementById('taskChart').getContext('2d');
+  if (window.tsChart) window.tsChart.destroy();
+  window.tsChart = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels: ['Switch', 'Repeat'],
-      datasets: [{
-        label: 'RT medio correcto (ms)',
-        data: [switchRT.toFixed(1), repeatRT.toFixed(1)],
-        backgroundColor: ['rgba(255,74,110,0.5)', 'rgba(74,255,218,0.4)'],
-        borderColor: ['#ff4a6e', '#4affda'],
-        borderWidth: 2,
-        borderRadius: 4,
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => `${ctx.parsed.y.toFixed(0)} ms` } }
-      },
-      scales: {
-        x: { ticks: { color: '#888' }, grid: { color: '#1a1a1a' } },
-        y: { ticks: { color: '#888' }, grid: { color: '#1a1a1a' }, beginAtZero: false }
-      }
-    }
+    data: { labels: ['Correctos', 'Incorrectos'], datasets: [{ data: [correctTrials.length, mainTrials.length - correctTrials.length], backgroundColor: ['#4affda', '#ff4a6e'] }] },
+    options: { responsive: true }
   });
-
-  // Chart 2: scatter — trial index vs RT, colored by switch/repeat
-  const distCtx = document.getElementById('distChart').getContext('2d');
-  const switchPoints = main.filter(t => t.isSwitch  && t.correct).map((t,i) => ({ x: t.trialIndex, y: t.rt }));
-  const repeatPoints = main.filter(t => !t.isSwitch && t.correct).map((t,i) => ({ x: t.trialIndex, y: t.rt }));
-
-  new Chart(distCtx, {
-    type: 'scatter',
-    data: {
-      datasets: [
-        {
-          label: 'Switch',
-          data: switchPoints,
-          backgroundColor: 'rgba(255,74,110,0.6)',
-          pointRadius: 4,
-        },
-        {
-          label: 'Repeat',
-          data: repeatPoints,
-          backgroundColor: 'rgba(74,255,218,0.4)',
-          pointRadius: 3,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { labels: { color: '#888' } }
-      },
-      scales: {
-        x: { title: { display: true, text: 'Índice de ensayo', color: '#666' }, ticks: { color: '#888' }, grid: { color: '#1a1a1a' } },
-        y: { title: { display: true, text: 'RT (ms)', color: '#666' }, ticks: { color: '#888' }, grid: { color: '#1a1a1a' } }
-      }
-    }
+  const logDiv = document.getElementById('trialLog');
+  logDiv.innerHTML = '';
+  mainTrials.forEach((t,i) => {
+    const row = document.createElement('div'); row.className='trial-row';
+    row.innerHTML = `<span>${i+1}</span><span>${t.stimulus}</span><span>${t.response === 'left' ? 'PAR' : 'IMPAR'}</span><span>${t.rt}</span><span class="${t.correct?'correct-dot':'wrong-dot'}">${t.correct?'✓':'✗'}</span>`;
+    logDiv.appendChild(row);
   });
-
-  // trial log
-  const logEl = document.getElementById('trialLog');
-  logEl.innerHTML = main.map(t => `
-    <div class="trial-row">
-      <span style="color:var(--muted)">${t.trialIndex}</span>
-      <span style="color:var(--switch-color);font-size:9px">${t.rule === 'parity' ? 'PAR' : 'MAG'}</span>
-      <span style="font-family:'Syne',sans-serif;font-weight:800;color:${t.stimulus < 5 ? '#ff9f43':'#c084fc'}">${t.stimulus}</span>
-      <span>${t.rt ? Math.round(t.rt) : '—'}</span>
-      <span>${t.isSwitch ? '<span style="color:var(--accent2)">SW</span>' : '<span style="color:var(--accent3)">RE</span>'}</span>
-      <span>${t.correct ? '<span style="color:var(--accent3)">✓</span>' : '<span style="color:var(--accent2)">✗</span>'}</span>
-    </div>
-  `).join('');
-
-  // APA text
-  const n = main.length;
-  const nSwitch = switchTrials.length;
-  const nRepeat = repeatTrials.length;
-  document.getElementById('paperText').textContent =
-`Task Switching Task — Resultados
-
-Participante: ${participantId}
-Grupo: ${group}
-Fecha: ${new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' })}
-
-Resumen ejecutivo:
-Los análisis de tiempo de reacción (TR) se realizaron únicamente sobre ensayos correctos.
-Se excluyeron los ensayos de práctica (n = ${PRACTICE_TRIALS}).
-
-Ensayos principales analizados: N = ${n}
-  · Switch trials: n = ${nSwitch} (${(nSwitch/n*100).toFixed(1)}%)
-  · Repeat trials: n = ${nRepeat} (${(nRepeat/n*100).toFixed(1)}%)
-
-Tiempos de reacción medios (ensayos correctos):
-  · Switch:  M = ${switchRT.toFixed(1)} ms
-  · Repeat:  M = ${repeatRT.toFixed(1)} ms
-  · Switch cost: Δ = ${switchCost > 0 ? '+' : ''}${switchCost.toFixed(1)} ms
-
-Precisión:
-  · Global:  ${accuracy}%
-  · Switch:  ${switchAcc}%
-  · Repeat:  ${repeatAcc}%
-
-Errores de perseveración: ${persevErrors} (respuesta según regla previa tras cambio de regla)
-
-Interpretación:
-Un switch cost positivo (${switchCost.toFixed(1)} ms) refleja el coste cognitivo de reconfigurar
-el conjunto de tarea (task set reconfiguration; Monsell, 2003). Los errores de
-perseveración (n = ${persevErrors}) indican dificultad para inhibir la regla anterior,
-coherente con el modelo de inhibición proactiva (Mayr & Keele, 2000).
-
-Referencias:
-Monsell, S. (2003). Task switching. Trends in Cognitive Sciences, 7(3), 134–140.
-Mayr, U., & Keele, S. W. (2000). Changing internal constraints on action: The role
-  of backward inhibition. Journal of Experimental Psychology: General, 129(1), 4–26.`;
+  document.getElementById('paperText').innerHTML = `Task Switching – Resultados\nGrupo: ${group}\nPrecisión: ${acc}%\nRT medio: ${meanRT} ms\nTotal ensayos: ${mainTrials.length}`;
+  showScreen('screen-results');
 }
 
-// ─────────────────────────────────────────────
-//  EXPORT
-// ─────────────────────────────────────────────
+function runPriming() {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('primingOverlay');
+    const msgDiv = document.getElementById('primingMsg');
+    const subDiv = document.getElementById('primingSub');
+    const fillDiv = document.getElementById('primingFill');
+    const steps = [
+      { msg: "🧠 FOCUS ATTENTION", sub: "Prepare for task switching" },
+      { msg: "🔄 RULE: PAR → LEFT, ODD → RIGHT", sub: "Pay attention" },
+      { msg: "🎯 READY", sub: "Task switching begins" }
+    ];
+    overlay.classList.add('active');
+    let stepIdx = 0;
+    function showStep() {
+      if (stepIdx >= steps.length) { overlay.classList.remove('active'); resolve(); return; }
+      msgDiv.innerText = steps[stepIdx].msg;
+      subDiv.innerText = steps[stepIdx].sub;
+      fillDiv.style.width = '0%';
+      let start = Date.now();
+      const duration = 1500;
+      const interval = setInterval(() => {
+        let elapsed = Date.now() - start;
+        let percent = Math.min(100, (elapsed / duration) * 100);
+        fillDiv.style.width = percent + '%';
+        if (elapsed >= duration) { clearInterval(interval); stepIdx++; showStep(); }
+      }, 20);
+    }
+    showStep();
+  });
+}
+async function startStudy() { if (!group) return; if (group === 'experimental') { await runPriming(); startCoreTask(); } else { startCoreTask(); } }
+
 function exportCSV() {
-  const headers = ['trial_index','phase','rule','prev_rule','is_switch','stimulus','correct_response','response','rt_ms','correct','timestamp'];
-  const rows = mainTrialLog.map(t => [
-    t.trialIndex, t.phase, t.rule, t.prevRule || '', t.isSwitch,
-    t.stimulus, t.correctResponse, t.response, t.rt ? Math.round(t.rt) : '',
-    t.correct, t.timestamp
-  ]);
-  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-  downloadFile(`taskswitch_${participantId}.csv`, csv, 'text/csv');
+  const main = trials.filter(t=>t.phase==='main');
+  let csv = "participant_id,group,date,trial,stimulus,response,rt_ms,correct,isi_jitter_ms,viewport,device_type,timestamp\n";
+  main.forEach((t,i)=>csv+=`${participantId},${group},${new Date().toISOString().slice(0,10)},${i+1},${t.stimulus},${t.response||'NA'},${t.rt||''},${t.correct?1:0},${t.jitter||''},${t.viewport||''},${t.deviceType||''},${t.timestamp||''}\n`);
+  const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`taskswitch_${participantId}.csv`; a.click();
 }
-
 function exportJSON() {
-  downloadFile(`taskswitch_${participantId}.json`, JSON.stringify({
-    participantId, group, task: 'task_switching',
-    exported: new Date().toISOString(),
-    trials: mainTrialLog
-  }, null, 2), 'application/json');
+  const main = trials.filter(t=>t.phase==='main');
+  const payload = { meta: { participantId, group, exportedAt: new Date().toISOString() }, trials: main };
+  const blob=new Blob([JSON.stringify(payload, null, 2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`taskswitch_${participantId}.json`; a.click();
 }
-
-function downloadFile(name, content, mime) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
-  a.download = name;
-  a.click();
-}
-
-// ─────────────────────────────────────────────
-//  RESET
-// ─────────────────────────────────────────────
-function resetStudy() {
-  group = null;
-  currentIdx = 0;
-  trials = [];
-  mainTrialLog = [];
-  waiting = false;
-  if (trialTimer) clearTimeout(trialTimer);
-  document.getElementById('btn-exp').classList.remove('selected');
-  document.getElementById('btn-ctrl').classList.remove('selected');
-  document.getElementById('startBtn').disabled = true;
-  regenerateID();
-  showScreen('screen-intro');
-}
+function resetStudy() { location.reload(); }
+function regenerateID() { participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase(); document.getElementById('pidDisplay').innerText = participantId; }
+function selectGroup(g) { group = g; document.getElementById('btn-exp').classList.toggle('selected', g==='experimental'); document.getElementById('btn-ctrl').classList.toggle('selected', g==='control'); document.getElementById('startBtn').disabled = false; }
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+document.getElementById('pidDisplay').innerText = participantId;
 </script>
 </body>
 </html>
