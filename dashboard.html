@@ -39,6 +39,82 @@ body::before {
   pointer-events: none;
   z-index: 0;
 }
+
+  /* Pantalla de login */
+#login-screen {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: rgba(10,10,10,0.95);
+}
+.login-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 40px 32px;
+  width: 340px;
+  border-radius: 8px;
+  text-align: center;
+}
+.login-box h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.login-box p {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 28px;
+}
+.login-box input {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.login-box input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+.logout-btn {
+  background: var(--surface);
+  border: 1px solid var(--accent2);
+  color: var(--accent2);
+  margin-left: 12px;
+}
+.error-msg {
+  color: var(--accent2);
+  font-size: 11px;
+  margin-top: 12px;
+}
+/* Dashboard (inicialmente oculto) */
+#dashboard {
+  display: none;
+  position: relative;
+  z-index: 1;
+}
 #dashboard { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
 .topbar {
   display: flex; justify-content: space-between; align-items: center;
@@ -123,6 +199,19 @@ canvas { max-height: 260px; width: 100%; }
 </style>
 </head>
 <body>
+<!-- Pantalla de login -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>🔐 ACCESO RESTRINGIDO</h1>
+    <p>Dashboard de administración</p>
+    <input type="email" id="login-email" placeholder="Email" autocomplete="off">
+    <input type="password" id="login-password" placeholder="Contraseña">
+    <button class="login-btn" onclick="login()">INICIAR SESIÓN</button>
+    <div id="login-error" class="error-msg" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- Dashboard (contenido real, igual que antes pero ahora con botón de logout) -->
 <div id="dashboard">
   <div class="topbar">
     <div class="topbar-logo">HCI · COGNITIVE LAB | DASHBOARD</div>
@@ -131,8 +220,11 @@ canvas { max-height: 260px; width: 100%; }
       <button class="btn-sm btn-outline" onclick="loadData()">↺ REFRESH</button>
       <button class="btn-sm btn-accent" onclick="exportCSV()">↓ CSV</button>
       <button class="btn-sm btn-accent" onclick="exportPDF()" style="background:var(--accent2);">📄 PDF</button>
+      <button class="btn-sm logout-btn" onclick="logout()">🚪 CERRAR SESIÓN</button>
     </div>
   </div>
+
+
   <div class="task-nav">
     <button class="task-btn" data-task="stroop"  onclick="switchTask('stroop')">Stroop</button>
     <button class="task-btn" data-task="flanker" onclick="switchTask('flanker')">Flanker</button>
@@ -182,12 +274,58 @@ canvas { max-height: 260px; width: 100%; }
 </div>
 <script>
 // ============================================================
-//  SUPABASE CONFIG
+// 
 // ============================================================
 const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+//  SUP
+// ============================================================
+//  LOGIN / LOGOUT
+// ============================================================
+async function login() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  const errorDiv = document.getElementById('login-error');
+  errorDiv.style.display = 'none';
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    // Login exitoso: ocultar login y mostrar dashboard
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    // Inicializar dashboard (cargar datos, etc.)
+    loadData(); // esta función debe estar definida (la que ya tenías)
+  } catch (err) {
+    errorDiv.style.display = 'block';
+    errorDiv.innerText = 'Error: ' + (err.message || 'Credenciales incorrectas');
+  }
+}
 
+async function logout() {
+  await supabase.auth.signOut();
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+// ============================================================
+//  COMPROBAR SESIÓN AL CARGAR LA PÁGINA
+// ============================================================
+async function checkSession() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    // Usuario ya logueado: mostrar dashboard directamente
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadData(); // función de carga de datos (debes tenerla)
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('dashboard').style.display = 'none';
+  }
+  }
+  
 const TASK_CONFIG = {
   stroop:  { table: 'stroop_trials',  rtField: 'rt',    groupField: 'cohort' },
   flanker: { table: 'flanker_trials', rtField: 'rt_ms', groupField: 'cohort' },
