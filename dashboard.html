@@ -39,16 +39,16 @@ body::before {
   pointer-events: none;
   z-index: 0;
 }
-
-  /* Pantalla de login */
+/* LOGIN SCREEN */
 #login-screen {
-  position: relative;
-  z-index: 2;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  background: rgba(10,10,10,0.95);
+  background: rgba(10,10,10,0.96);
+  backdrop-filter: blur(4px);
 }
 .login-box {
   background: var(--surface);
@@ -57,6 +57,7 @@ body::before {
   width: 340px;
   border-radius: 8px;
   text-align: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
 }
 .login-box h1 {
   font-family: 'Syne', sans-serif;
@@ -104,18 +105,19 @@ body::before {
   color: var(--accent2);
   margin-left: 12px;
 }
-.error-msg {
+.login-error {
   color: var(--accent2);
   font-size: 11px;
   margin-top: 12px;
 }
-/* Dashboard (inicialmente oculto) */
+/* DASHBOARD (inicialmente oculto) */
 #dashboard {
   display: none;
   position: relative;
   z-index: 1;
+  min-height: 100vh;
+  flex-direction: column;
 }
-#dashboard { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
 .topbar {
   display: flex; justify-content: space-between; align-items: center;
   padding: 20px 32px; border-bottom: 1px solid var(--border);
@@ -199,7 +201,8 @@ canvas { max-height: 260px; width: 100%; }
 </style>
 </head>
 <body>
-<!-- Pantalla de login -->
+
+<!-- PANTALLA DE LOGIN -->
 <div id="login-screen">
   <div class="login-box">
     <h1>🔐 ACCESO RESTRINGIDO</h1>
@@ -207,11 +210,11 @@ canvas { max-height: 260px; width: 100%; }
     <input type="email" id="login-email" placeholder="Email" autocomplete="off">
     <input type="password" id="login-password" placeholder="Contraseña">
     <button class="login-btn" onclick="login()">INICIAR SESIÓN</button>
-    <div id="login-error" class="error-msg" style="display:none;"></div>
+    <div id="login-error" class="login-error" style="display:none;"></div>
   </div>
 </div>
 
-<!-- Dashboard (contenido real, igual que antes pero ahora con botón de logout) -->
+<!-- DASHBOARD (contenido real) -->
 <div id="dashboard">
   <div class="topbar">
     <div class="topbar-logo">HCI · COGNITIVE LAB | DASHBOARD</div>
@@ -223,8 +226,6 @@ canvas { max-height: 260px; width: 100%; }
       <button class="btn-sm logout-btn" onclick="logout()">🚪 CERRAR SESIÓN</button>
     </div>
   </div>
-
-
   <div class="task-nav">
     <button class="task-btn" data-task="stroop"  onclick="switchTask('stroop')">Stroop</button>
     <button class="task-btn" data-task="flanker" onclick="switchTask('flanker')">Flanker</button>
@@ -272,55 +273,18 @@ canvas { max-height: 260px; width: 100%; }
     </div>
   </div>
 </div>
+
 <script>
 // ============================================================
-// 
+//  SUPABASE CLIENT (SIN CONFLICTO DE NOMBRES)
 // ============================================================
 const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);SUPABASE_KEY);
-//  SUP
-// ============================================================
-//  LOGIN / LOGOUT
-// ============================================================
-async function login() {
-  const email = document.getElementById('login-email').value;
-  const password = document.getElementById('login-password').value;
-  const errorDiv = document.getElementById('login-error');
-  errorDiv.style.display = 'none';
-  
-  try {
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    
-    // Login exitoso: ocultar login y mostrar dashboard
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    
-    // Cargar los datos del dashboard
-    if (typeof loadData === 'function') loadData();
-    
-  } catch (err) {
-    errorDiv.style.display = 'block';
-    errorDiv.innerText = 'Error: ' + (err.message || 'Credenciales incorrectas');
-  }
-}
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================================
-//  LOGOUT CORREGIDO
+//  CONFIGURACIÓN DE TABLAS POR TAREA
 // ============================================================
-async function logout() {
-  await supabaseClient.auth.signOut();
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('login-email').value = '';
-  document.getElementById('login-password').value = '';
-  }
-// ============================================================
-//  COMPROBAR SESIÓN AL CARGAR LA PÁGINA
-// ============================================================
-
-  
 const TASK_CONFIG = {
   stroop:  { table: 'stroop_trials',  rtField: 'rt',    groupField: 'cohort' },
   flanker: { table: 'flanker_trials', rtField: 'rt_ms', groupField: 'cohort' },
@@ -345,6 +309,49 @@ let rawData = [];
 let allData = [];
 let chartInstance = null;
 
+// ============================================================
+//  AUTENTICACIÓN
+// ============================================================
+async function login() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  const errorDiv = document.getElementById('login-error');
+  errorDiv.style.display = 'none';
+  try {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadData();
+  } catch (err) {
+    errorDiv.style.display = 'block';
+    errorDiv.innerText = 'Error: ' + (err.message || 'Credenciales incorrectas');
+  }
+}
+
+async function logout() {
+  await supabaseClient.auth.signOut();
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+async function checkSession() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('dashboard').style.display = 'none';
+  }
+}
+
+// ============================================================
+//  CARGA DE DATOS
+// ============================================================
 async function loadData() {
   const cfg = TASK_CONFIG[currentTask];
   const limit = parseInt(document.getElementById('limitFilter').value);
@@ -352,17 +359,24 @@ async function loadData() {
   errorDiv.style.display = 'none';
   document.getElementById('participantTableBody').innerHTML = '<tr><td colspan="10" class="loading"><span class="spinner"></span>Cargando...</td></tr>';
   try {
-    const { data, error } = await db.from(cfg.table).select('*').order('created_at', { ascending: false }).limit(limit);
+    const { data, error } = await supabaseClient
+      .from(cfg.table)
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
     if (error) throw error;
     rawData = data || [];
     allData = rawData.map(r => normalizeRow(r, cfg));
-    if (!allData.length) errorDiv.style.display = 'block', errorDiv.innerHTML = `⚠️ No hay datos en <strong>${cfg.table}</strong>.`;
+    if (!allData.length) {
+      errorDiv.style.display = 'block';
+      errorDiv.innerHTML = `⚠️ No hay datos en <strong>${cfg.table}</strong>.`;
+    }
     applyFilters(false);
     document.getElementById('refresh-time').innerText = 'Actualizado: ' + new Date().toLocaleTimeString();
   } catch(e) {
     errorDiv.style.display = 'block';
-    errorDiv.innerHTML = `❌ Error: ${e.message}<br>· La tabla ${cfg.table} no existe o no tiene SELECT.`;
-    document.getElementById('participantTableBody').innerHTML = '<tr><td colspan="10" class="loading">Sin datos</td></tr>';
+    errorDiv.innerHTML = `❌ Error: ${e.message}<br>· La tabla ${cfg.table} no existe o no tiene permisos SELECT.`;
+    document.getElementById('participantTableBody').innerHTML = '<td><td colspan="10" class="loading">Sin datos</td></tr>';
   }
 }
 
@@ -383,6 +397,9 @@ function applyFilters() {
 function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
 function std(arr) { if(arr.length<2) return 0; let m=mean(arr); return Math.sqrt(arr.reduce((s,x)=>s+(x-m)**2,0)/(arr.length-1)); }
 
+// ============================================================
+//  RENDER ESTADÍSTICAS (incluye WCST)
+// ============================================================
 function renderStats(data) {
   const container = document.getElementById('statsContainer');
   if (!data.length) { container.innerHTML = '<div class="stat-card"><div class="stat-label">Sin datos</div><div class="stat-value">—</div></div>'; return; }
@@ -392,8 +409,7 @@ function renderStats(data) {
   let html = `<div class="stat-card"><div class="stat-label">Participantes</div><div class="stat-value accent">${participants.length}</div></div>
               <div class="stat-card"><div class="stat-label">Total ensayos</div><div class="stat-value">${totalTrials}</div><div class="stat-sub">${correctCount} correctos</div></div>
               <div class="stat-card"><div class="stat-label">Precisión global</div><div class="stat-value accent3">${(correctCount/totalTrials*100).toFixed(1)}%</div></div>`;
-
-  if (currentTask === 'stroop' || currentTask === 'flanker' || currentTask === 'simon') {
+  if (['stroop','flanker','simon'].includes(currentTask)) {
     const valid = data.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
     const cong = valid.filter(t => t.congruent).map(t=>t.rt);
     const incong = valid.filter(t => !t.congruent).map(t=>t.rt);
@@ -402,8 +418,7 @@ function renderStats(data) {
     html += `<div class="stat-card"><div class="stat-label">${label}</div><div class="stat-value accent2">${effect} ms</div><div class="stat-sub">${valid.length} válidos</div></div>
              <div class="stat-card"><div class="stat-label">RT Congruente</div><div class="stat-value">${cong.length ? Math.round(mean(cong)) : '—'} ms</div></div>
              <div class="stat-card"><div class="stat-label">RT Incongruente</div><div class="stat-value">${incong.length ? Math.round(mean(incong)) : '—'} ms</div></div>`;
-  } 
-  else if (currentTask === 'gonogo') {
+  } else if (currentTask === 'gonogo') {
     const go = data.filter(t => t.stimulus_type === 'go');
     const nogo = data.filter(t => t.stimulus_type === 'nogo');
     const hits = go.filter(t=>t.correct).length;
@@ -412,15 +427,13 @@ function renderStats(data) {
     const dPrime = ((Math.log((hr+0.01)/(1.01-hr)) - Math.log((far+0.01)/(1.01-far))) / 1.414).toFixed(3);
     html += `<div class="stat-card"><div class="stat-label">d'</div><div class="stat-value accent3">${dPrime}</div></div>
              <div class="stat-card"><div class="stat-label">Aciertos / FA</div><div class="stat-value">${hits} / ${fa}</div></div>`;
-  }
-  else if (currentTask === 'ant') {
+  } else if (currentTask === 'ant') {
     const valid = data.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
     const cong = valid.filter(t => t.flanker_type === 'congruent').map(t=>t.rt);
     const incong = valid.filter(t => t.flanker_type === 'incongruent').map(t=>t.rt);
     const conflict = (cong.length && incong.length) ? Math.round(mean(incong)-mean(cong)) : '—';
     html += `<div class="stat-card"><div class="stat-label">Conflicto ANT</div><div class="stat-value accent2">${conflict} ms</div></div>`;
-  }
-  else if (currentTask === 'nback') {
+  } else if (currentTask === 'nback') {
     const targets = data.filter(t => t.is_target === true);
     const nontargets = data.filter(t => t.is_target === false);
     const hits = targets.filter(t=>t.correct).length, fa = nontargets.filter(t=>!t.correct).length;
@@ -428,8 +441,7 @@ function renderStats(data) {
     const dPrime = ((Math.log((hr+0.01)/(1.01-hr)) - Math.log((far+0.01)/(1.01-far))) / 1.414).toFixed(3);
     html += `<div class="stat-card"><div class="stat-label">d' N-back</div><div class="stat-value accent3">${dPrime}</div></div>
              <div class="stat-card"><div class="stat-label">Aciertos/FA</div><div class="stat-value">${hits}/${fa}</div></div>`;
-  }
-  else if (currentTask === 'posner') {
+  } else if (currentTask === 'posner') {
     const valid = data.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
     const validCue = valid.filter(t => t.valid_trial === true).map(t=>t.rt);
     const invalidCue = valid.filter(t => t.valid_trial === false).map(t=>t.rt);
@@ -437,8 +449,7 @@ function renderStats(data) {
     html += `<div class="stat-card"><div class="stat-label">RT Válido</div><div class="stat-value accent3">${validCue.length ? Math.round(mean(validCue)) : '—'} ms</div></div>
              <div class="stat-card"><div class="stat-label">RT Inválido</div><div class="stat-value accent2">${invalidCue.length ? Math.round(mean(invalidCue)) : '—'} ms</div></div>
              <div class="stat-card"><div class="stat-label">Efecto orientación</div><div class="stat-value accent">${effect} ms</div></div>`;
-  }
-  else if (currentTask === 'taskswitch') {
+  } else if (currentTask === 'taskswitch') {
     const valid = data.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
     const repeat = valid.filter(t => t.condition === 'repeat').map(t=>t.rt);
     const switchCond = valid.filter(t => t.condition === 'switch').map(t=>t.rt);
@@ -446,15 +457,12 @@ function renderStats(data) {
     html += `<div class="stat-card"><div class="stat-label">RT Repetición</div><div class="stat-value accent3">${repeat.length ? Math.round(mean(repeat)) : '—'} ms</div></div>
              <div class="stat-card"><div class="stat-label">RT Cambio</div><div class="stat-value accent2">${switchCond.length ? Math.round(mean(switchCond)) : '—'} ms</div></div>
              <div class="stat-card"><div class="stat-label">Coste de cambio</div><div class="stat-value accent">${switchCost} ms</div><div class="stat-sub">${valid.length} válidos</div></div>`;
-  }
-  else if (currentTask === 'wcst') {
-    // WCST: calcular métricas agregadas
+  } else if (currentTask === 'wcst') {
     const categories = data.filter(t => t.completed_category === true).length;
     const perseverative = data.filter(t => t.is_perseverative === true).length;
     const setLoss = data.filter(t => t.is_set_loss === true).length;
-    const conceptualTrials = data.filter(t => t.trials_in_category >= 3).length; // aproximación
-    const totalTrialsWCST = data.length;
-    const conceptualPercent = (conceptualTrials / totalTrialsWCST * 100).toFixed(1);
+    const conceptualTrials = data.filter(t => t.trials_in_category >= 3).length;
+    const conceptualPercent = (conceptualTrials / data.length * 100).toFixed(1);
     html += `<div class="stat-card"><div class="stat-label">Categorías</div><div class="stat-value accent">${categories}</div></div>
              <div class="stat-card"><div class="stat-label">Errores perseverativos</div><div class="stat-value accent2">${perseverative}</div></div>
              <div class="stat-card"><div class="stat-label">Pérdidas de set</div><div class="stat-value accent2">${setLoss}</div></div>
@@ -463,6 +471,9 @@ function renderStats(data) {
   container.innerHTML = html;
 }
 
+// ============================================================
+//  TABLA DE PARTICIPANTES (incluye WCST)
+// ============================================================
 function renderParticipantTable(data) {
   const participants = [...new Set(data.map(d=>d.participant_id).filter(Boolean))];
   const thead = document.getElementById('participantTableHead');
@@ -477,7 +488,7 @@ function renderParticipantTable(data) {
   else if (currentTask === 'posner') columns.push('RT Válido', 'RT Inválido', 'Efecto');
   else if (currentTask === 'taskswitch') columns.push('RT Repetición', 'RT Cambio', 'Coste cambio');
   else if (currentTask === 'wcst') columns.push('Categorías', 'Persev.', 'Set loss', 'Conceptual%');
-  thead.innerHTML = '<table>' + columns.map(c => `<th>${c}</th>`).join('') + '</tr>';
+  thead.innerHTML = '<tr>' + columns.map(c => `<th>${c}</th>`).join('') + '</tr>';
   const rows = participants.map(pid => {
     const pData = data.filter(d => d.participant_id === pid);
     const group = (pData[0]?.group || 'control').toLowerCase();
@@ -535,6 +546,9 @@ function renderParticipantTable(data) {
   tbody.innerHTML = rows;
 }
 
+// ============================================================
+//  GRÁFICO (incluye WCST)
+// ============================================================
 function renderChart(data) {
   const ctx = document.getElementById('taskChart').getContext('2d');
   if (chartInstance) chartInstance.destroy();
@@ -614,12 +628,19 @@ function renderChart(data) {
   });
 }
 
+// ============================================================
+//  EXPORTACIONES CORREGIDAS
+// ============================================================
 function exportCSV() {
   if (!rawData.length) return;
   const headers = Object.keys(rawData[0]).join(',');
   const rows = rawData.map(row => Object.values(row).map(v => JSON.stringify(v ?? '')).join(',')).join('\n');
-  const blob = new Blob([headers + '\n' + rows], {type:'text/csv'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${currentTask}_data_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  const blob = new Blob([headers + '\n' + rows], {type: 'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${currentTask}_data_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 async function exportPDF() {
@@ -636,25 +657,9 @@ async function exportPDF() {
   pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
   pdf.save(`${currentTask}_dashboard_${new Date().toISOString().slice(0,10)}.pdf`);
 }
-  
-
-loadData();
-//  CHECK SESSION CORREGIDO
-// ============================================================
-async function checkSession() {
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    if (typeof loadData === 'function') loadData();
-  } else {
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('dashboard').style.display = 'none';
-  }
-}
 
 // ============================================================
-//  EJECUTAR AL CARGAR LA PÁGINA
+//  INICIALIZACIÓN
 // ============================================================
 checkSession();
 </script>
