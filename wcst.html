@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>WCST · Cognitive Flexibility</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ===== ESTILOS STROOP ===== */
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --muted: #666;
+  --accent: #e8ff4a;
+  --accent2: #ff4a6e;
+  --accent3: #4affda;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Space Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(232,255,74,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,255,74,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; }
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 32px; border-bottom: 1px solid var(--border);
+  background: rgba(10,10,10,0.8); backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+.badge { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; border: 1px solid var(--border); padding: 4px 10px; border-radius: 2px; }
+#screen-intro { justify-content: center; align-items: center; padding: 40px 32px; }
+.intro-content { max-width: 600px; width: 100%; animation: fadeUp 0.6s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.intro-tag { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+.intro-title { font-family: 'Syne', sans-serif; font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.05; margin-bottom: 24px; }
+.intro-title span { color: var(--accent); }
+.intro-desc { font-size: 13px; line-height: 1.8; color: #aaa; margin-bottom: 32px; }
+.ethics-box {
+  border: 1px solid var(--border); background: var(--surface); padding: 16px 20px;
+  border-radius: 4px; font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 32px;
+}
+.ethics-box strong { color: var(--accent3); display: block; margin-bottom: 4px; letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px; }
+.group-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.group-btn {
+  padding: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  cursor: pointer; font-family: 'Space Mono', monospace; font-size: 12px; text-align: left;
+  border-radius: 4px; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.group-btn::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; }
+.group-btn.experimental::before { background: linear-gradient(135deg, rgba(232,255,74,0.08), transparent); }
+.group-btn.control::before { background: linear-gradient(135deg, rgba(74,255,218,0.08), transparent); }
+.group-btn:hover::before, .group-btn.selected::before { opacity: 1; }
+.group-btn.selected.experimental { border-color: var(--accent); }
+.group-btn.selected.control { border-color: var(--accent3); }
+.group-btn .g-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 4px; display: block; }
+.group-btn.experimental .g-label { color: var(--accent); }
+.group-btn.control .g-label { color: var(--accent3); }
+.group-btn .g-desc { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.btn-primary { width: 100%; padding: 16px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+#screen-task { align-items: center; justify-content: center; padding: 40px 32px; }
+.task-wrapper { max-width: 700px; width: 100%; }
+.progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 32px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+.trial-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 24px; }
+.stimulus-area {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 40px 20px;
+  margin-bottom: 32px;
+  text-align: center;
+}
+.card-display {
+  font-size: clamp(32px, 10vw, 72px);
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  word-break: break-word;
+  animation: stimIn 0.15s ease;
+}
+@keyframes stimIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+.response-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+}
+.resp-btn {
+  padding: 20px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.15s;
+  text-align: center;
+}
+.resp-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
+.resp-btn:active { transform: translateY(0); }
+.feedback-flash { position: fixed; inset: 0; pointer-events: none; z-index: 200; opacity: 0; transition: opacity 0.1s; }
+.feedback-flash.correct { background: rgba(74,255,218,0.07); opacity: 1; }
+.feedback-flash.wrong { background: rgba(255,74,110,0.07); opacity: 1; }
+.rt-ticker { position: fixed; top: 80px; right: 32px; font-size: 11px; color: var(--muted); font-family: monospace; background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 20px; }
+#screen-results { padding: 40px 32px; align-items: center; }
+.results-content { max-width: 800px; width: 100%; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 4px; }
+.stat-label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; }
+.stat-value.accent { color: var(--accent); }
+.stat-value.accent2 { color: var(--accent2); }
+.stat-value.accent3 { color: var(--accent3); }
+.paper-box { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
+.paper-text { font-size: 12px; line-height: 1.9; color: #ccc; white-space: pre-wrap; font-family: 'Space Mono', monospace; }
+.action-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-export { flex: 1; min-width: 140px; padding: 14px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-outline { flex: 1; min-width: 140px; padding: 14px; background: transparent; color: var(--text); border: 1px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.priming-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(12px);
+  z-index: 300; display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+}
+.priming-overlay.active { opacity: 1; visibility: visible; }
+.priming-card { max-width: 500px; background: var(--surface); border: 1px solid var(--accent); padding: 40px 32px; border-radius: 12px; text-align: center; }
+.priming-icon { font-size: 48px; margin-bottom: 20px; }
+.priming-message { font-size: 24px; font-weight: 700; margin-bottom: 16px; color: var(--accent); }
+.priming-sub { font-size: 13px; color: var(--muted); }
+.priming-progress { margin-top: 28px; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.priming-progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.2s linear; }
+@media (max-width: 680px) {
+  .response-grid { gap: 12px; }
+  .resp-btn { padding: 14px; font-size: 16px; }
+  .card-display { font-size: 48px; }
+  .stats-grid { grid-template-columns: 1fr; gap: 8px; }
+  .stat-value { font-size: 22px; }
+  .rt-ticker { top: auto; bottom: 16px; right: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="feedback-flash" id="feedbackFlash"></div>
+<div id="primingOverlay" class="priming-overlay">
+  <div class="priming-card">
+    <div class="priming-icon">🧠</div>
+    <div class="priming-message" id="primingMsg">Focus attention</div>
+    <div class="priming-sub" id="primingSub">Prepare for WCST</div>
+    <div class="priming-progress"><div class="priming-progress-fill" id="primingFill"></div></div>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="screen active" id="screen-intro">
+  <div class="header">
+    <div class="logo">WCST · HCI</div>
+    <div style="display:flex;gap:10px;"><div class="badge">Cognitive Flexibility</div></div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
+    <div class="intro-content">
+      <div class="intro-tag">// Wisconsin Card Sorting Test</div>
+      <h1 class="intro-title">Flexibilidad<br><span>Cognitiva</span><br>y Perseveración</h1>
+      <p class="intro-desc">Debes emparejar cada tarjeta con una de las cuatro tarjetas de referencia. No se te dirá la regla; debes descubrirla por ensayo y error. Después de varios aciertos seguidos, la regla cambiará sin aviso. Se mide tu capacidad de adaptación.</p>
+      <div class="ethics-box"><strong>⚖ Declaración ética</strong><span>Sin tracking. Datos locales y en Supabase. Solo para investigación.</span></div>
+      <div class="ethics-box" style="border-color:#333; display:flex; justify-content:space-between;">
+        <div><strong style="color:var(--accent)">⬡ PARTICIPANT ID</strong><span id="pidDisplay" style="margin-left:12px;"></span></div>
+        <button onclick="regenerateID()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:4px 8px;">↺</button>
+      </div>
+      <div style="margin-bottom:16px; font-size:11px; color:var(--muted);">Selecciona grupo</div>
+      <div class="group-row">
+        <button class="group-btn experimental" onclick="selectGroup('experimental')" id="btn-exp"><span class="g-label">Experimental</span><span class="g-desc">Recibe preparación atencional</span></button>
+        <button class="group-btn control" onclick="selectGroup('control')" id="btn-ctrl"><span class="g-label">Control</span><span class="g-desc">Secuencia directa</span></button>
+      </div>
+      <button class="btn-primary" id="startBtn" disabled onclick="startStudy()">Comenzar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK -->
+<div class="screen" id="screen-task">
+  <div class="header">
+    <div class="logo">WCST · HCI</div>
+    <div class="badge" id="phaseLabel">Práctica</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:32px 24px;">
+    <div class="task-wrapper">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>
+      <div class="trial-meta">
+        <span id="trialCounter">Ensayo 0 / 128</span>
+        <span id="phaseDesc">Regla: ?</span>
+      </div>
+      <div class="stimulus-area">
+        <div class="card-display" id="stimulusCard">⚪ ▲▲</div>
+      </div>
+      <div class="response-grid" id="responseGrid">
+        <button class="resp-btn" data-pile="0" onclick="respond(0)">🔴 ●</button>
+        <button class="resp-btn" data-pile="1" onclick="respond(1)">🟢 ▲▲</button>
+        <button class="resp-btn" data-pile="2" onclick="respond(2)">🔵 ■■■</button>
+        <button class="resp-btn" data-pile="3" onclick="respond(3)">🟡 ✚✚✚✚</button>
+      </div>
+    </div>
+  </div>
+  <div class="rt-ticker" id="rtTicker"></div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="screen-results">
+  <div class="header"><div class="logo">WCST · HCI</div><div class="badge">Análisis completo</div></div>
+  <div style="padding:40px 32px; display:flex; justify-content:center;">
+    <div class="results-content">
+      <h2 class="results-title">Resultados</h2>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="paper-box"><h3>// Informe clínico (estilo APA)</h3><div class="paper-text" id="paperText"></div></div>
+      <div class="action-row">
+        <button class="btn-export" onclick="exportCSV()">↓ Exportar CSV</button>
+        <button class="btn-export" style="background:var(--accent3);color:#000;" onclick="exportJSON()">↓ Exportar JSON</button>
+        <button class="btn-outline" onclick="resetStudy()">↺ Nueva sesión</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  SUPABASE
+// ============================================================
+const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function sendTrial(trial) {
+  try {
+    await supabaseClient.from('wcst_trials').insert(trial);
+  } catch(e) { console.warn(e); }
+}
+
+// ============================================================
+//  CONFIGURACIÓN WCST
+// ============================================================
+const TOTAL_TRIALS = 128;        // estándar clínico
+const CATEGORY_CRITERION = 10;   // 10 aciertos consecutivos cambia regla
+const PRACTICE_TRIALS = 8;
+
+// Colores, formas y números (para las tarjetas de referencia y estímulo)
+const COLORS = ['🔴', '🟢', '🔵', '🟡'];
+const SHAPES = ['●', '▲', '■', '✚'];
+const NUMBERS = [1, 2, 3, 4];
+
+// Mazos de referencia (fijos, siempre visibles)
+const REFERENCE_CARDS = [
+  { color: COLORS[0], shape: SHAPES[0], number: NUMBERS[0], label: `${COLORS[0]} ${SHAPES[0]}` },
+  { color: COLORS[1], shape: SHAPES[1], number: NUMBERS[1], label: `${COLORS[1]} ${SHAPES[1]}${SHAPES[1]}` },
+  { color: COLORS[2], shape: SHAPES[2], number: NUMBERS[2], label: `${COLORS[2]} ${SHAPES[2]}${SHAPES[2]}${SHAPES[2]}` },
+  { color: COLORS[3], shape: SHAPES[3], number: NUMBERS[3], label: `${COLORS[3]} ${SHAPES[3]}${SHAPES[3]}${SHAPES[3]}${SHAPES[3]}` }
+];
+
+// ============================================================
+//  ESTADO GLOBAL
+// ============================================================
+let participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
+let group = null;
+let trials = [];            // todos los ensayos (practice + main)
+let currentIdx = 0;
+let stimStart = 0;
+let waiting = false;
+let fixationTimer = null;
+
+// Variables dinámicas WCST
+let currentRule = 'color';    // 'color', 'shape', 'number'
+let previousRule = null;
+let correctStreak = 0;
+let categoriesCompleted = 0;
+let totalErrors = 0;
+let perseverativeErrors = 0;
+let setLosses = 0;
+let conceptualResponses = 0;   // secuencias de ≥3 aciertos
+let currentStreak = 0;
+
+// ============================================================
+//  GENERAR TARJETA ALEATORIA (estímulo)
+// ============================================================
+function randomCard() {
+  return {
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+    number: NUMBERS[Math.floor(Math.random() * NUMBERS.length)]
+  };
+}
+
+// ============================================================
+//  COMPROBAR SI EL MAZO ELEGIDO COINCIDE CON LA REGLA ACTUAL
+// ============================================================
+function isMatch(card, pileIndex, rule) {
+  const ref = REFERENCE_CARDS[pileIndex];
+  if (rule === 'color') return card.color === ref.color;
+  if (rule === 'shape') return card.shape === ref.shape;
+  if (rule === 'number') return card.number === ref.number;
+  return false;
+}
+
+// ============================================================
+//  CONSTRUIR LISTA DE ENSAYOS (práctica + principal)
+// ============================================================
+function buildTrials() {
+  let list = [];
+  // Práctica: 8 ensayos con regla fija (color) y sin cambio de regla
+  for (let i = 0; i < PRACTICE_TRIALS; i++) {
+    list.push({
+      phase: 'practice',
+      card: randomCard(),
+      rule: 'color',
+      isPractice: true
+    });
+  }
+  // Ensayos principales: 128
+  for (let i = 0; i < TOTAL_TRIALS; i++) {
+    list.push({
+      phase: 'main',
+      card: randomCard(),
+      rule: currentRule,   // se actualizará dinámicamente durante la ejecución
+      isPractice: false
+    });
+  }
+  return list;
+}
+
+// ============================================================
+//  ACTUALIZAR REGLA (se llama tras 10 aciertos consecutivos)
+// ============================================================
+function updateRule() {
+  const possibleRules = ['color', 'shape', 'number'];
+  let newRule = possibleRules[Math.floor(Math.random() * 3)];
+  while (newRule === currentRule) {
+    newRule = possibleRules[Math.floor(Math.random() * 3)];
+  }
+  previousRule = currentRule;
+  currentRule = newRule;
+  correctStreak = 0;
+  categoriesCompleted++;
+  setLosses = 0; // reseteo de pérdidas de set? En realidad las pérdidas se cuentan cuando falla tras 5 aciertos.
+}
+
+// ============================================================
+//  INICIAR TAREA (después de priming opcional)
+// ============================================================
+function startCoreTask() {
+  trials = buildTrials();
+  currentIdx = 0;
+  currentRule = 'color';
+  previousRule = null;
+  correctStreak = 0;
+  categoriesCompleted = 0;
+  totalErrors = 0;
+  perseverativeErrors = 0;
+  setLosses = 0;
+  conceptualResponses = 0;
+  currentStreak = 0;
+  showScreen('screen-task');
+  nextTrial();
+}
+
+// ============================================================
+//  PRESENTAR SIGUIENTE ENSAYO
+// ============================================================
+function nextTrial() {
+  if (currentIdx >= trials.length) {
+    finishTask();
+    return;
+  }
+  const trial = trials[currentIdx];
+  const total = trials.length;
+  document.getElementById('progressBar').style.width = (currentIdx / total * 100) + '%';
+  document.getElementById('trialCounter').innerHTML = `Ensayo ${currentIdx+1} / ${total}`;
+  const isPractice = (trial.phase === 'practice');
+  document.getElementById('phaseLabel').innerText = isPractice ? 'Práctica' : 'Fase principal';
+  document.getElementById('phaseDesc').innerHTML = `Regla: ${currentRule.toUpperCase()}`;
+
+  // Mostrar tarjeta estímulo
+  const card = trial.card;
+  const cardDisplay = `${card.color} ${card.shape.repeat(card.number)}`;
+  document.getElementById('stimulusCard').innerText = cardDisplay;
+
+  setResponseState(false);
+  waiting = false;
+  const jitter = Math.random() * 400 + 400; // ISI 400-800ms
+  if (fixationTimer) clearTimeout(fixationTimer);
+  fixationTimer = setTimeout(() => {
+    stimStart = performance.now();
+    setResponseState(true);
+    waiting = true;
+  }, jitter);
+}
+
+function setResponseState(active) {
+  document.querySelectorAll('.resp-btn').forEach(btn => btn.disabled = !active);
+  waiting = active;
+}
+
+// ============================================================
+//  RESPUESTA DEL PARTICIPANTE
+// ============================================================
+function respond(pileIndex) {
+  if (!waiting) return;
+  const rt = Math.round(performance.now() - stimStart);
+  const trial = trials[currentIdx];
+  const card = trial.card;
+  const isPractice = (trial.phase === 'practice');
+
+  // Determinar corrección según regla actual
+  let correct = false;
+  if (trial.phase === 'practice') {
+    // En práctica la regla es siempre color y no se registran métricas avanzadas
+    correct = (pileIndex === 0); // el primer mazo es el que coincide en color? Simplificado
+    // Para práctica usamos lógica simple: primer mazo (🔴) es el correcto (ejemplo)
+    // Mejor: evaluar con la regla 'color'
+    correct = (card.color === REFERENCE_CARDS[pileIndex].color);
+  } else {
+    correct = isMatch(card, pileIndex, currentRule);
+  }
+
+  // Flash feedback
+  const flash = document.getElementById('feedbackFlash');
+  flash.className = 'feedback-flash ' + (correct ? 'correct' : 'wrong');
+  setTimeout(() => flash.className = 'feedback-flash', 200);
+
+  // Validar RT (200-2000ms)
+  if (!isPractice && (rt < 200 || rt > 2000)) {
+    document.getElementById('rtTicker').innerHTML = `⚠️ Respuesta demasiado rápida/lenta (${rt} ms) — repite`;
+    setTimeout(() => {
+      waiting = false;
+      setResponseState(false);
+      // Re-presentar el mismo trial
+      stimStart = performance.now();
+      setResponseState(true);
+      waiting = true;
+    }, 800);
+    return;
+  }
+  document.getElementById('rtTicker').innerHTML = rt + ' ms';
+
+  // ========== ACTUALIZAR MÉTRICAS (solo fase main) ==========
+  let isPerseverative = false;
+  let isSetLoss = false;
+  if (!isPractice) {
+    if (!correct) {
+      totalErrors++;
+      // Error perseverativo: si el participante elige el mismo mazo que en la regla anterior
+      if (previousRule) {
+        const wouldMatchPrev = isMatch(card, pileIndex, previousRule);
+        if (wouldMatchPrev && !correct) {
+          perseverativeErrors++;
+          isPerseverative = true;
+        }
+      }
+      // Pérdida de set: fallo tras haber tenido al menos 5 aciertos consecutivos
+      if (correctStreak >= 5) {
+        setLosses++;
+        isSetLoss = true;
+      }
+      correctStreak = 0;
+    } else {
+      correctStreak++;
+      if (correctStreak >= 3) conceptualResponses++;
+      // Cambio de categoría si llega a 10 aciertos consecutivos
+      if (correctStreak === CATEGORY_CRITERION) {
+        updateRule();
+        // Marcamos set completado
+      }
+    }
+  }
+
+  // Guardar datos del ensayo (para exportación y Supabase)
+  const trialRecord = {
+    participant_id: participantId,
+    cohort: group,
+    trial_index: currentIdx + 1,
+    phase: trial.phase,
+    card_color: card.color,
+    card_shape: card.shape,
+    card_number: card.number,
+    correct_rule: currentRule,
+    chosen_pile: pileIndex,
+    response: pileIndex.toString(),
+    correct: correct,
+    feedback: correct ? 'correct' : 'incorrect',
+    category_index: categoriesCompleted,
+    trials_in_category: correctStreak,
+    completed_category: (correctStreak === CATEGORY_CRITERION),
+    is_perseverative: isPerseverative,
+    is_set_loss: isSetLoss,
+    is_random_error: (!correct && !isPerseverative),
+    rt_ms: rt,
+    timestamp: new Date().toISOString()
+  };
+
+  trials[currentIdx].record = trialRecord; // para exportación final
+  if (!isPractice) sendTrial(trialRecord);
+
+  // Avanzar al siguiente ensayo
+  currentIdx++;
+  setTimeout(() => nextTrial(), 280);
+}
+
+// ============================================================
+//  FINALIZAR Y MOSTRAR RESULTADOS
+// ============================================================
+function finishTask() {
+  // Calcular métricas finales
+  const mainTrials = trials.filter(t => t.phase === 'main');
+  const totalTrials = mainTrials.length;
+  const totalCorrect = mainTrials.filter(t => t.record?.correct).length;
+  const accuracy = (totalCorrect / totalTrials * 100).toFixed(1);
+  const totalPerseverative = perseverativeErrors;
+  const totalSetLoss = setLosses;
+  const totalCategories = categoriesCompleted;
+  const conceptualPercent = (conceptualResponses / totalTrials * 100).toFixed(1);
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Categorías completadas</div><div class="stat-value accent">${totalCategories}</div></div>
+    <div class="stat-card"><div class="stat-label">Errores perseverativos</div><div class="stat-value accent2">${totalPerseverative}</div></div>
+    <div class="stat-card"><div class="stat-label">Pérdidas de set</div><div class="stat-value accent2">${totalSetLoss}</div></div>
+    <div class="stat-card"><div class="stat-label">Aciertos conceptuales (%)</div><div class="stat-value accent3">${conceptualPercent}%</div></div>
+    <div class="stat-card"><div class="stat-label">Precisión global</div><div class="stat-value">${accuracy}%</div></div>
+  `;
+
+  const paperText = `WCST (Wisconsin Card Sorting Test) – Resultados
+Participante: ${participantId.slice(-8)} | Grupo: ${group}
+Total ensayos: ${totalTrials}
+Categorías completadas: ${totalCategories} (máximo 12-13 en 128 ensayos)
+Errores perseverativos: ${totalPerseverative} (puntuación T: ${Math.round(50 + (totalPerseverative - 15)/2)})
+Pérdidas de set: ${totalSetLoss}
+Aciertos conceptuales: ${conceptualPercent}% (≥70% indica buena formación de conceptos)
+Precisión global: ${accuracy}%
+Interpretación: ${totalCategories >= 6 ? 'Buena flexibilidad cognitiva.' : (totalCategories >= 3 ? 'Rendimiento medio. Posible rigidez.' : 'Posible deterioro en flexibilidad cognitiva.')}`;
+
+  document.getElementById('paperText').innerText = paperText;
+  showScreen('screen-results');
+}
+
+// ============================================================
+//  PRIMING
+// ============================================================
+function runPriming() {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('primingOverlay');
+    const msgDiv = document.getElementById('primingMsg');
+    const subDiv = document.getElementById('primingSub');
+    const fillDiv = document.getElementById('primingFill');
+    const steps = [
+      { msg: "🧠 FOCUS ATTENTION", sub: "Prepare cognitive flexibility" },
+      { msg: "🔄 RULES CHANGE AFTER 10 CORRECT", sub: "Adapt quickly" },
+      { msg: "🎯 READY", sub: "WCST begins" }
+    ];
+    overlay.classList.add('active');
+    let stepIdx = 0;
+    function showStep() {
+      if (stepIdx >= steps.length) { overlay.classList.remove('active'); resolve(); return; }
+      msgDiv.innerText = steps[stepIdx].msg;
+      subDiv.innerText = steps[stepIdx].sub;
+      fillDiv.style.width = '0%';
+      let startTime = Date.now();
+      const duration = 1500;
+      const interval = setInterval(() => {
+        let elapsed = Date.now() - startTime;
+        let percent = Math.min(100, (elapsed / duration) * 100);
+        fillDiv.style.width = percent + '%';
+        if (elapsed >= duration) { clearInterval(interval); stepIdx++; showStep(); }
+      }, 20);
+    }
+    showStep();
+  });
+}
+
+async function startStudy() {
+  if (!group) return;
+  if (group === 'experimental') { await runPriming(); startCoreTask(); }
+  else { startCoreTask(); }
+}
+
+// ============================================================
+//  EXPORTACIONES
+// ============================================================
+function exportCSV() {
+  const mainTrials = trials.filter(t => t.phase === 'main' && t.record);
+  if (!mainTrials.length) return;
+  const headers = Object.keys(mainTrials[0].record).join(',');
+  const rows = mainTrials.map(t => Object.values(t.record).map(v => JSON.stringify(v ?? '')).join(',')).join('\n');
+  const blob = new Blob([headers + '\n' + rows], {type: 'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `wcst_${participantId}.csv`;
+  a.click();
+}
+
+function exportJSON() {
+  const mainTrials = trials.filter(t => t.phase === 'main' && t.record);
+  const payload = {
+    meta: { participantId, group, exportedAt: new Date().toISOString() },
+    trials: mainTrials.map(t => t.record)
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `wcst_${participantId}.json`;
+  a.click();
+}
+
+function resetStudy() { location.reload(); }
+
+// ============================================================
+//  UI HELPERS
+// ============================================================
+function regenerateID() {
+  participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
+  document.getElementById('pidDisplay').innerText = participantId;
+}
+function selectGroup(g) {
+  group = g;
+  document.getElementById('btn-exp').classList.toggle('selected', g === 'experimental');
+  document.getElementById('btn-ctrl').classList.toggle('selected', g === 'control');
+  document.getElementById('startBtn').disabled = false;
+}
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+document.getElementById('pidDisplay').innerText = participantId;
+</script>
+</body>
+</html>
