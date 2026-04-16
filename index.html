@@ -175,6 +175,94 @@ h1 span {
   .container { padding: 24px 16px; }
   .task-grid { gap: 16px; }
 }
+
+
+
+  /* ===== MEJORAS DE LEGIBILIDAD PARA INDEX.HTML ===== */
+/* TEXTO PRINCIPAL (debajo del título) */
+.sub {
+  font-size: 16px !important;
+  color: #ffffff !important;
+  line-height: 1.5 !important;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* CAJA ÉTICA */
+.ethics {
+  font-size: 13px !important;
+  color: #dddddd !important;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 18px 20px;
+  border-radius: 8px;
+  line-height: 1.5;
+}
+.ethics strong {
+  color: var(--accent3);
+  font-size: 14px;
+}
+
+/* RECUADRO ROJIZO KO-FI */
+.contribute-box {
+  background: rgba(255,74,110,0.08);
+  border: 1px solid var(--accent2);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin: 24px 0 32px 0;
+  text-align: center;
+  backdrop-filter: blur(4px);
+}
+.contribute-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  color: var(--accent2);
+}
+.contribute-text {
+  font-size: 14px;
+  color: #ffffff !important;
+  max-width: 650px;
+  margin: 0 auto 16px auto;
+  line-height: 1.5;
+}
+.contribute-note {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 16px;
+}
+
+/* TARJETAS DE TAREAS */
+.task-card h2 {
+  font-size: 22px !important;
+  color: #ffffff !important;
+  margin-bottom: 10px;
+}
+.task-card p {
+  font-size: 12px !important;
+  color: #cccccc !important;
+  line-height: 1.6;
+}
+
+/* FOOTER */
+.footer {
+  font-size: 11px !important;
+  color: #aaaaaa !important;
+  line-height: 1.5;
+  text-align: center;
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+/* BOTONES (opcional, para que tengan mejor contraste) */
+.task-btn {
+  color: #eeeeee !important;
+}
+.task-btn:hover {
+  color: #000000 !important;
+}
 </style>
 </head>
 <body>
