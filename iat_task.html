@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>IAT · Nombres & Asociación Implícita</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --muted: #666;
+  --accent: #e8ff4a;
+  --accent2: #ff4a6e;
+  --accent3: #4affda;
+  --iat-color: #a78bfa;
+  --warmth-color: #fb923c;
+  --comp-color: #38bdf8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Space Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(167,139,250,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167,139,250,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; }
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 32px; border-bottom: 1px solid var(--border);
+  background: rgba(10,10,10,0.85); backdrop-filter: blur(12px);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo {
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--iat-color);
+}
+.badge {
+  font-size: 10px; letter-spacing: 0.15em; color: var(--muted);
+  text-transform: uppercase; border: 1px solid var(--border); padding: 4px 10px; border-radius: 2px;
+}
+#screen-intro { justify-content: center; align-items: center; padding: 40px 32px; }
+.intro-content { max-width: 600px; width: 100%; animation: fadeUp 0.6s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.intro-tag { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--iat-color); margin-bottom: 16px; }
+.intro-title { font-family: 'Syne', sans-serif; font-size: clamp(28px, 5vw, 48px); font-weight: 800; line-height: 1.05; margin-bottom: 24px; }
+.intro-title span { color: var(--iat-color); }
+.intro-desc { font-size: 13px; line-height: 1.8; color: #aaa; margin-bottom: 28px; }
+.ethics-box {
+  border: 1px solid var(--border); background: var(--surface); padding: 16px 20px;
+  border-radius: 4px; font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 16px;
+}
+.ethics-box strong {
+  color: var(--accent3); display: block; margin-bottom: 4px;
+  letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px;
+}
+.lang-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.lang-btn {
+  padding: 18px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  cursor: pointer; font-family: 'Space Mono', monospace; font-size: 12px; text-align: left;
+  border-radius: 4px; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.lang-btn::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; background: linear-gradient(135deg, rgba(167,139,250,0.1), transparent); }
+.lang-btn:hover::before, .lang-btn.selected::before { opacity: 1; }
+.lang-btn.selected { border-color: var(--iat-color); }
+.lang-btn .g-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 4px; display: block; color: var(--iat-color); }
+.lang-btn .g-desc { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.btn-primary {
+  width: 100%; padding: 16px; background: var(--iat-color); color: #000; border: none;
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px;
+  letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 4px;
+  transition: opacity 0.2s;
+}
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn-primary:not(:disabled):hover { opacity: 0.85; }
+#screen-instructions { align-items: center; justify-content: center; padding: 40px 32px; }
+.instr-content { max-width: 600px; width: 100%; }
+.instr-title { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 8px; color: var(--iat-color); }
+.instr-subtitle { font-size: 11px; color: var(--muted); margin-bottom: 28px; letter-spacing: 0.1em; text-transform: uppercase; }
+.instr-block { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 16px; }
+.instr-block h3 { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.category-display {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;
+}
+.cat-side {
+  border-radius: 4px; padding: 14px; text-align: center;
+}
+.cat-side.left { background: rgba(232,255,74,0.08); border: 1px solid rgba(232,255,74,0.3); }
+.cat-side.right { background: rgba(255,74,110,0.08); border: 1px solid rgba(255,74,110,0.3); }
+.cat-key { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; margin-bottom: 6px; }
+.cat-side.left .cat-key { color: var(--accent); }
+.cat-side.right .cat-key { color: var(--accent2); }
+.cat-labels { font-size: 10px; color: var(--muted); line-height: 1.8; }
+.cat-labels span { display: block; }
+.cat-labels .surname { color: var(--iat-color); font-size: 11px; font-weight: 700; }
+.cat-labels .warm { color: var(--warmth-color); }
+.cat-labels .comp { color: var(--comp-color); }
+.cat-labels .neg { color: var(--accent2); }
+#screen-task { align-items: center; justify-content: center; padding: 40px 32px; }
+.task-wrapper { max-width: 680px; width: 100%; }
+.progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 28px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--iat-color); transition: width 0.3s ease; }
+.trial-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 20px; }
+.cat-header {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px;
+}
+.cat-header-side {
+  border-radius: 4px; padding: 10px 14px; text-align: center;
+  font-size: 10px; line-height: 1.7;
+}
+.cat-header-side.left { background: rgba(232,255,74,0.06); border: 1px solid rgba(232,255,74,0.2); }
+.cat-header-side.right { background: rgba(255,74,110,0.06); border: 1px solid rgba(255,74,110,0.2); }
+.cat-header-key { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; margin-bottom: 4px; }
+.cat-header-side.left .cat-header-key { color: var(--accent); }
+.cat-header-side.right .cat-header-key { color: var(--accent2); }
+.cat-header-labels { color: var(--muted); font-size: 9px; line-height: 1.7; letter-spacing: 0.05em; }
+.cat-header-labels .surname-tag { color: var(--iat-color); }
+.cat-header-labels .warm-tag { color: var(--warmth-color); }
+.cat-header-labels .comp-tag { color: var(--comp-color); }
+.cat-header-labels .neg-tag { color: var(--accent2); }
+.stimulus-area {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 180px; margin-bottom: 32px;
+}
+.fixation-cross { font-size: 36px; color: var(--muted); user-select: none; }
+.stim-card {
+  display: none;
+  background: var(--surface); border: 2px solid var(--border);
+  border-radius: 12px; padding: 32px 48px; text-align: center;
+  min-width: 220px;
+  animation: cardAppear 0.1s ease;
+}
+@keyframes cardAppear { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
+.stim-card.visible { display: block; }
+.stim-word {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: clamp(28px, 6vw, 52px); line-height: 1.1;
+  margin-bottom: 8px;
+  transition: color 0.15s;
+}
+.stim-word.surname  { color: var(--iat-color); }
+.stim-word.warmth   { color: var(--warmth-color); }
+.stim-word.comp     { color: var(--comp-color); }
+.stim-word.negative { color: var(--accent2); }
+.stim-type { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+.response-grid { display: flex; justify-content: center; gap: 20px; }
+.resp-btn {
+  flex: 1; max-width: 240px;
+  padding: 18px 24px; border: 2px solid var(--border); background: var(--surface);
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px;
+  cursor: pointer; border-radius: 8px; text-transform: uppercase;
+  transition: all 0.15s; color: var(--text);
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.resp-btn .resp-key { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; font-weight: 400; }
+.resp-btn.left  { border-color: var(--accent);  color: var(--accent); }
+.resp-btn.right { border-color: var(--accent2); color: var(--accent2); }
+.resp-btn:active { transform: scale(0.96); }
+.resp-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.feedback-flash { position: fixed; inset: 0; pointer-events: none; z-index: 200; opacity: 0; transition: opacity 0.08s; }
+.feedback-flash.correct { background: rgba(74,255,218,0.06); opacity: 1; }
+.feedback-flash.wrong   { background: rgba(255,74,110,0.1); opacity: 1; }
+.error-x {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  font-family: 'Syne', sans-serif; font-size: 72px; font-weight: 800;
+  color: var(--accent2); opacity: 0; pointer-events: none; z-index: 300;
+  transition: opacity 0.1s;
+}
+.error-x.show { opacity: 1; }
+.kb-hint { text-align: center; font-size: 10px; color: var(--muted); margin-top: 16px; letter-spacing: 0.08em; }
+#screen-likert { align-items: center; justify-content: center; padding: 40px 32px; }
+.likert-content { max-width: 640px; width: 100%; }
+.likert-title { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+.likert-subtitle { font-size: 11px; color: var(--muted); margin-bottom: 32px; letter-spacing: 0.1em; text-transform: uppercase; }
+.likert-item { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 16px; }
+.likert-q { font-size: 13px; color: var(--text); margin-bottom: 14px; line-height: 1.6; }
+.likert-q strong { color: var(--iat-color); }
+.likert-scale { display: flex; gap: 8px; justify-content: space-between; flex-wrap: wrap; }
+.likert-opt {
+  flex: 1; min-width: 44px; padding: 10px 4px; text-align: center;
+  border: 1px solid var(--border); background: var(--bg); border-radius: 4px;
+  cursor: pointer; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted);
+  transition: all 0.15s;
+}
+.likert-opt:hover { border-color: var(--iat-color); color: var(--iat-color); }
+.likert-opt.selected { background: var(--iat-color); color: #000; border-color: var(--iat-color); font-weight: 700; }
+.likert-labels { display: flex; justify-content: space-between; font-size: 9px; color: var(--muted); margin-top: 6px; letter-spacing: 0.05em; }
+#screen-results { padding: 40px 32px; align-items: center; }
+.results-content { max-width: 860px; width: 100%; }
+.results-title { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; margin-bottom: 4px; }
+.results-subtitle { font-size: 11px; color: var(--muted); margin-bottom: 32px; }
+.stats-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 12px; margin-bottom: 28px;
+}
+.stat-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 4px; }
+.stat-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
+.stat-value.accent  { color: var(--accent); }
+.stat-value.accent2 { color: var(--accent2); }
+.stat-value.accent3 { color: var(--accent3); }
+.stat-value.purple  { color: var(--iat-color); }
+.stat-value.warm    { color: var(--warmth-color); }
+.stat-value.comp    { color: var(--comp-color); }
+.dscore-bar-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 24px; }
+.dscore-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+.dscore-label { font-size: 10px; color: var(--muted); width: 100px; flex-shrink: 0; letter-spacing: 0.08em; }
+.dscore-track { flex: 1; height: 8px; background: var(--border); border-radius: 4px; position: relative; overflow: visible; }
+.dscore-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; min-width: 2px; }
+.dscore-val { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; width: 60px; text-align: right; }
+.chart-section { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 24px; }
+.chart-title { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+.trial-log { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 24px; }
+.trial-log-header { padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+.trial-log-body { max-height: 220px; overflow-y: auto; font-size: 11px; }
+.trial-row { display: grid; grid-template-columns: 36px 90px 110px 72px 56px; padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.03); align-items: center; gap: 8px; }
+.trial-row.header { color: var(--muted); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; background: rgba(255,255,255,0.02); }
+.paper-box { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
+.paper-box h3 { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+.paper-text { font-size: 12px; line-height: 2; color: #ccc; white-space: pre-wrap; font-family: 'Space Mono', monospace; }
+.action-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-export { flex: 1; min-width: 140px; padding: 14px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-export.teal { background: var(--accent3); }
+.btn-outline { flex: 1; min-width: 140px; padding: 14px; background: transparent; color: var(--text); border: 1px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-outline:hover { border-color: var(--iat-color); color: var(--iat-color); }
+#screen-break { align-items: center; justify-content: center; padding: 40px 32px; }
+.break-content { max-width: 560px; width: 100%; text-align: center; animation: fadeUp 0.5s ease both; }
+.break-tag { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--iat-color); margin-bottom: 12px; }
+.break-title { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; margin-bottom: 16px; }
+.break-desc { font-size: 13px; color: #aaa; line-height: 1.8; margin-bottom: 32px; }
+@media (max-width: 680px) {
+  .header { padding: 16px 20px; }
+  .stim-word { font-size: 28px; }
+  .stim-card { padding: 24px 28px; }
+  .resp-btn { font-size: 12px; padding: 14px 10px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .trial-row { grid-template-columns: 28px 70px 90px 60px 40px; font-size: 9px; gap: 4px; padding: 6px 10px; }
+  .cat-header { gap: 8px; }
+  #screen-results { padding: 24px 16px; }
+  .likert-scale { gap: 4px; }
+}
+</style>
+</head>
+<body>
+
+<div class="feedback-flash" id="feedbackFlash"></div>
+<div class="error-x" id="errorX">✗</div>
+
+<!-- INTRO -->
+<div class="screen active" id="screen-intro">
+  <div class="header">
+    <div class="logo">IAT · ARGIRA HCI</div>
+    <div class="badge">Implicit Association Test</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
+    <div class="intro-content">
+      <div class="intro-tag">// Implicit Association Test — Names</div>
+      <h1 class="intro-title">Nombres &<br><span>Asociación</span><br>Implícita</h1>
+      <p class="intro-desc">
+        Este test mide asociaciones inconscientes entre apellidos de líderes tecnológicos y atributos de <strong style="color:var(--warmth-color)">calidez</strong> y <strong style="color:var(--comp-color)">competencia</strong>. No hay respuestas correctas o incorrectas — el test mide velocidad de respuesta, no conocimiento.
+      </p>
+      <div class="ethics-box">
+        <strong>⚖ Ethical Statement</strong>
+        Sin tracking externo. Sin cookies. Datos almacenados en Supabase con ID anónimo. Código abierto MIT — Jose Ranero García (ORCID: 0009-0009-3168-6379)
+      </div>
+      <div class="ethics-box" style="border-color:#333; margin-bottom:20px;">
+        <strong style="color:var(--iat-color)">⬡ PARTICIPANT ID</strong>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+          <span id="pidDisplay" style="font-size:12px;"></span>
+          <button onclick="regenerateID()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:4px 8px;cursor:pointer;font-family:'Space Mono',monospace;">↺ nuevo</button>
+        </div>
+      </div>
+      <div style="margin-bottom:10px; font-size:11px; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase;">Idioma del test</div>
+      <div class="lang-row">
+        <button class="lang-btn" onclick="selectLang('es')" id="btn-es">
+          <span class="g-label">🇪🇸 Español</span>
+          <span class="g-desc">Atributos en castellano — recomendado para hispanohablantes</span>
+        </button>
+        <button class="lang-btn" onclick="selectLang('en')" id="btn-en">
+          <span class="g-label">🇬🇧 English</span>
+          <span class="g-desc">Attributes in English — recommended for native speakers</span>
+        </button>
+      </div>
+      <button class="btn-primary" id="startBtn" disabled onclick="goToInstructions()">Comenzar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- INSTRUCCIONES -->
+<div class="screen" id="screen-instructions">
+  <div class="header">
+    <div class="logo">IAT · ARGIRA HCI</div>
+    <div class="badge" id="instrBadge">Bloque 1 / 5</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
+    <div class="instr-content">
+      <div class="instr-title" id="instrTitle">Instrucciones</div>
+      <div class="instr-subtitle" id="instrSubtitle">BLOQUE DE PRÁCTICA</div>
+      <div class="instr-block">
+        <h3>// Tarea</h3>
+        <p style="font-size:12px; color:#aaa; line-height:1.8;" id="instrDesc">
+          Clasifica cada palabra que aparezca usando las teclas ← y →.<br>
+          Responde lo más <strong style="color:var(--accent)">rápido y preciso</strong> posible.
+        </p>
+      </div>
+      <div class="instr-block">
+        <h3 id="instrCatTitle">// Categorías para este bloque</h3>
+        <div class="category-display" id="instrCategories"></div>
+      </div>
+      <div class="instr-block" style="border-color:rgba(167,139,250,0.3);">
+        <h3>// Nota importante</h3>
+        <p style="font-size:11px; color:var(--muted); line-height:1.8;">
+          Si cometes un error, aparecerá una <strong style="color:var(--accent2)">✗</strong> roja. Deberás presionar la tecla correcta para continuar. Los errores se registran pero no invalidan el test.
+        </p>
+      </div>
+      <button class="btn-primary" onclick="startBlock()">Iniciar bloque →</button>
+    </div>
+  </div>
+</div>
+
+<!-- BREAK -->
+<div class="screen" id="screen-break">
+  <div class="header">
+    <div class="logo">IAT · ARGIRA HCI</div>
+    <div class="badge">Pausa</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
+    <div class="break-content">
+      <div class="break-tag">// Bloque completado</div>
+      <h2 class="break-title" id="breakTitle">Descansa un momento</h2>
+      <p class="break-desc" id="breakDesc">Tómate unos segundos. El siguiente bloque comenzará cuando estés listo.</p>
+      <button class="btn-primary" onclick="nextBlock()">Siguiente bloque →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK -->
+<div class="screen" id="screen-task">
+  <div class="header">
+    <div class="logo">IAT · ARGIRA HCI</div>
+    <div class="badge" id="phaseLabel">Bloque 1</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:32px 24px;">
+    <div class="task-wrapper">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+      </div>
+      <div class="trial-meta">
+        <span id="trialCounter">Ensayo 0 / 0</span>
+        <span id="blockLabel" style="color:var(--iat-color); font-size:10px; letter-spacing:0.1em;"></span>
+      </div>
+      <div class="cat-header" id="catHeader"></div>
+      <div class="stimulus-area">
+        <div class="fixation-cross" id="fixation">+</div>
+        <div class="stim-card" id="stimCard">
+          <div class="stim-word" id="stimWord">?</div>
+          <div class="stim-type" id="stimType"></div>
+        </div>
+      </div>
+      <div class="response-grid">
+        <button class="resp-btn left" id="btnLeft" onclick="respond('left')" disabled>
+          <span id="btnLeftLabel">←</span>
+          <span class="resp-key">← tecla E</span>
+        </button>
+        <button class="resp-btn right" id="btnRight" onclick="respond('right')" disabled>
+          <span id="btnRightLabel">→</span>
+          <span class="resp-key">tecla I →</span>
+        </button>
+      </div>
+      <div class="kb-hint">Teclado: E (izquierda) · I (derecha) | Móvil: botones</div>
+    </div>
+  </div>
+</div>
+
+<!-- LIKERT -->
+<div class="screen" id="screen-likert">
+  <div class="header">
+    <div class="logo">IAT · ARGIRA HCI</div>
+    <div class="badge">Evaluación Explícita</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
+    <div class="likert-content">
+      <h2 class="likert-title" id="likertTitle">Evaluación consciente</h2>
+      <p class="likert-subtitle">5 preguntas · Sin tiempo límite</p>
+      <div id="likertItems"></div>
+      <button class="btn-primary" id="likertSubmitBtn" disabled onclick="submitLikert()">Ver resultados →</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="screen-results">
+  <div class="header">
+    <div class="logo">IAT · ARGIRA HCI</div>
+    <div class="badge">Analysis Complete</div>
+  </div>
+  <div style="padding:40px 32px; display:flex; justify-content:center;">
+    <div class="results-content">
+      <h2 class="results-title">Resultados IAT</h2>
+      <p class="results-subtitle" id="resultsMeta"></p>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="dscore-bar-wrap">
+        <div class="chart-title" style="margin-bottom:20px;">// D-score por apellido (efecto de asociación implícita)</div>
+        <div id="dscoreBars"></div>
+        <p style="font-size:10px; color:var(--muted); margin-top:12px; line-height:1.7;">
+          D &gt; 0.2 = asociación débil · D &gt; 0.5 = moderada · D &gt; 0.8 = fuerte (Greenwald et al., 2003)
+        </p>
+      </div>
+      <div class="chart-section">
+        <div class="chart-title">// RT medio por apellido y dimensión (ms)</div>
+        <canvas id="rtChart" height="220"></canvas>
+      </div>
+      <div class="chart-section">
+        <div class="chart-title">// Distribución RT — ensayos principales</div>
+        <canvas id="distChart" height="200"></canvas>
+      </div>
+      <div class="trial-log">
+        <div class="trial-log-header">// Raw Trial Log (ensayos principales)</div>
+        <div class="trial-log-body">
+          <div class="trial-row header">
+            <span>#</span><span>Apellido</span><span>Atributo</span><span>RT(ms)</span><span>OK</span>
+          </div>
+          <div id="trialLog"></div>
+        </div>
+      </div>
+      <div class="paper-box">
+        <h3>// Texto APA</h3>
+        <div class="paper-text" id="paperText"></div>
+      </div>
+      <div class="action-row">
+        <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
+        <button class="btn-export teal" onclick="exportJSON()">↓ Export JSON</button>
+        <button class="btn-outline" onclick="resetStudy()">↺ Nueva Sesión</button>
+        <button class="btn-outline" onclick="window.location.href='index.html'" style="border-color:var(--iat-color);color:var(--iat-color);">← Volver al Lab</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  SUPABASE CLIENT
+// ============================================================
+const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function sendTrial(t) {
+  try {
+    const payload = {
+      participant_id: t.participant_id,
+      language: t.language,
+      cohort: 'none',
+      block_index: t.blockIndex,
+      block_name: t.blockName,
+      trial_index: t.trialIndex,
+      phase: t.phase,
+      word: t.word,
+      category: t.category,
+      correct_key: t.correctKey,
+      response_key: t.responseKey,
+      rt_ms: Math.round(t.rt),
+      correct: t.correct,
+      error_rt_ms: t.errorRt ? Math.round(t.errorRt) : null,
+      timestamp: t.timestamp
+    };
+    const { error } = await _supabase.from('iat_trials').insert(payload);
+    if (error) console.warn('Supabase error:', error);
+  } catch(e) { console.warn(e); }
+}
+
+// ============================================================
+//  ESTÍMULOS Y CONFIGURACIÓN
+// ============================================================
+const SURNAMES = {
+  real: [
+    { word: 'Amodei',   type: 'surname', hint_es: 'amor · italiano',   hint_en: 'love · Italian' },
+    { word: 'Altman',   type: 'surname', hint_es: 'alto · germánico',  hint_en: 'old man · Germanic' },
+    { word: 'LeCun',    type: 'surname', hint_es: 'neutro · francés',  hint_en: 'neutral · French' },
+    { word: 'Musk',     type: 'surname', hint_es: 'almizcle · eslavo', hint_en: 'musk · Slavic' },
+    { word: 'Hinton',   type: 'surname', hint_es: 'lugar · inglés',    hint_en: 'place · English' },
+  ],
+  fake: [
+    { word: 'Valori',   type: 'surname', hint_es: 'inventado',  hint_en: 'invented' },
+    { word: 'Forthen',  type: 'surname', hint_es: 'inventado',  hint_en: 'invented' },
+    { word: 'Amaris',   type: 'surname', hint_es: 'inventado',  hint_en: 'invented' },
+    { word: 'Driskan',  type: 'surname', hint_es: 'inventado',  hint_en: 'invented' },
+    { word: 'Brentow',  type: 'surname', hint_es: 'inventado',  hint_en: 'invented' },
+    { word: 'Vexon',    type: 'surname', hint_es: 'inventado',  hint_en: 'invented' },
+    { word: 'Comel',    type: 'surname', hint_es: 'inventado',  hint_en: 'invented' },
+  ]
+};
+
+const ATTRIBUTES = {
+  es: {
+    warmth_pos:  ['cercano','ético','humano','cuidadoso','empático'],
+    warmth_neg:  ['frío','distante','indiferente','calculador'],
+    comp_pos:    ['fiable','seguro','riguroso','predecible','sólido'],
+    comp_neg:    ['peligroso','impredecible','arriesgado','caótico'],
+  },
+  en: {
+    warmth_pos:  ['caring','ethical','human','warm','empathetic'],
+    warmth_neg:  ['cold','distant','indifferent','calculating'],
+    comp_pos:    ['reliable','safe','rigorous','predictable','solid'],
+    comp_neg:    ['dangerous','unpredictable','risky','chaotic'],
+  }
+};
+
+const BLOCK_CONFIGS = [
+  { id:0, name_es:'Práctica — Apellidos', name_en:'Practice — Surnames', trials:16, phase:'practice',
+    left_cats:['real_surname'], right_cats:['fake_surname'] },
+  { id:1, name_es:'Práctica — Atributos', name_en:'Practice — Attributes', trials:16, phase:'practice',
+    left_cats:['warmth_pos','comp_pos'], right_cats:['warmth_neg','comp_neg'] },
+  { id:2, name_es:'Combinado A', name_en:'Combined A', trials:32, phase:'main',
+    left_cats:['real_surname','warmth_pos','comp_pos'], right_cats:['fake_surname','warmth_neg','comp_neg'] },
+  { id:3, name_es:'Práctica — Apellidos invertidos', name_en:'Practice — Surnames reversed', trials:16, phase:'practice',
+    left_cats:['fake_surname'], right_cats:['real_surname'] },
+  { id:4, name_es:'Combinado B', name_en:'Combined B', trials:32, phase:'main',
+    left_cats:['fake_surname','warmth_pos','comp_pos'], right_cats:['real_surname','warmth_neg','comp_neg'] },
+];
+
+let participantId = generateID();
+let lang = null;
+let currentBlockIdx = 0;
+let currentTrialIdx = 0;
+let trials = [];
+let mainTrialLog = [];
+let likertAnswers = {};
+let stimStart = 0;
+let waiting = false;
+let awaitingCorrection = false;
+let errorStart = 0;
+let trialTimer = null;
+const ISI = 250;
+
+function generateID() {
+  return 'IAT-' + Date.now().toString(36).slice(-5).toUpperCase() + '-' + Math.random().toString(36).slice(2,4).toUpperCase();
+}
+function regenerateID() {
+  participantId = generateID();
+  document.getElementById('pidDisplay').textContent = participantId;
+}
+document.getElementById('pidDisplay').textContent = participantId;
+
+function selectLang(l) {
+  lang = l;
+  document.getElementById('btn-es').classList.toggle('selected', l === 'es');
+  document.getElementById('btn-en').classList.toggle('selected', l === 'en');
+  document.getElementById('startBtn').disabled = false;
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function getAllSurnames() {
+  return [...SURNAMES.real, ...SURNAMES.fake];
+}
+
+function getCatWords(catName) {
+  const attrs = ATTRIBUTES[lang];
+  const allS = getAllSurnames();
+  switch(catName) {
+    case 'real_surname': return SURNAMES.real.map(s => ({ word: s.word, type: 'surname', cat: 'real_surname' }));
+    case 'fake_surname': return SURNAMES.fake.map(s => ({ word: s.word, type: 'surname', cat: 'fake_surname' }));
+    case 'warmth_pos':   return attrs.warmth_pos.map(w => ({ word: w, type: 'warmth', cat: 'warmth_pos' }));
+    case 'warmth_neg':   return attrs.warmth_neg.map(w => ({ word: w, type: 'warmth', cat: 'warmth_neg' }));
+    case 'comp_pos':     return attrs.comp_pos.map(w => ({ word: w, type: 'competence', cat: 'comp_pos' }));
+    case 'comp_neg':     return attrs.comp_neg.map(w => ({ word: w, type: 'competence', cat: 'comp_neg' }));
+    default: return [];
+  }
+}
+
+function buildBlockTrials(blockCfg, blockTrialOffset) {
+  const leftWords  = blockCfg.left_cats.flatMap(c => getCatWords(c));
+  const rightWords = blockCfg.right_cats.flatMap(c => getCatWords(c));
+  const allWords   = [
+    ...leftWords.map(w => ({ ...w, correctKey: 'left' })),
+    ...rightWords.map(w => ({ ...w, correctKey: 'right' })),
+  ];
+  const list = [];
+  for (let i = 0; i < blockCfg.trials; i++) {
+    const item = allWords[Math.floor(Math.random() * allWords.length)];
+    list.push({
+      trialIndex: blockTrialOffset + i,
+      blockIndex: blockCfg.id,
+      blockName: lang === 'es' ? blockCfg.name_es : blockCfg.name_en,
+      phase: blockCfg.phase,
+      word: item.word,
+      category: item.cat,
+      wordType: item.type,
+      correctKey: item.correctKey,
+      responseKey: null,
+      rt: null,
+      errorRt: null,
+      correct: null,
+      timestamp: null,
+    });
+  }
+  return list;
+}
+
+function buildAllTrials() {
+  let list = [];
+  let offset = 0;
+  for (const cfg of BLOCK_CONFIGS) {
+    const bt = buildBlockTrials(cfg, offset);
+    list = list.concat(bt);
+    offset += bt.length;
+  }
+  return list;
+}
+
+function buildCatLabel(cats, side) {
+  return cats.map(c => {
+    if (c === 'real_surname') return `<span class="surname-tag">${lang==='es'?'Apellidos reales':'Real surnames'}</span>`;
+    if (c === 'fake_surname') return `<span class="surname-tag">${lang==='es'?'Apellidos inventados':'Invented surnames'}</span>`;
+    if (c === 'warmth_pos')   return `<span class="warm-tag">${lang==='es'?'Calidez (+)':'Warmth (+)'}</span>`;
+    if (c === 'warmth_neg')   return `<span class="neg-tag">${lang==='es'?'Calidez (−)':'Warmth (−)'}</span>`;
+    if (c === 'comp_pos')     return `<span class="comp-tag">${lang==='es'?'Competencia (+)':'Competence (+)'}</span>`;
+    if (c === 'comp_neg')     return `<span class="neg-tag">${lang==='es'?'Competencia (−)':'Competence (−)'}</span>`;
+    return c;
+  }).join('<br>');
+}
+
+function getCatHeaderHTML(blockCfg) {
+  const leftLabel  = buildCatLabel(blockCfg.left_cats, 'left');
+  const rightLabel = buildCatLabel(blockCfg.right_cats, 'right');
+  return `
+    <div class="cat-header-side left">
+      <div class="cat-header-key">← E</div>
+      <div class="cat-header-labels">${leftLabel}</div>
+    </div>
+    <div class="cat-header-side right">
+      <div class="cat-header-key">I →</div>
+      <div class="cat-header-labels">${rightLabel}</div>
+    </div>
+  `;
+}
+
+function buildInstrCatHTML(blockCfg) {
+  const L = buildCatLabel(blockCfg.left_cats, 'left');
+  const R = buildCatLabel(blockCfg.right_cats, 'right');
+  return `
+    <div class="cat-side left">
+      <div class="cat-key">← E</div>
+      <div class="cat-labels">${L}</div>
+    </div>
+    <div class="cat-side right">
+      <div class="cat-key">I →</div>
+      <div class="cat-labels">${R}</div>
+    </div>
+  `;
+}
+
+function goToInstructions() {
+  if (!lang) {
+    alert('⚠️ Por favor, selecciona un idioma / Please select a language.');
+    return;
+  }
+  trials = buildAllTrials();
+  currentBlockIdx = 0;
+  currentTrialIdx = 0;
+  mainTrialLog = [];
+  showInstructions(0);
+}
+
+function showInstructions(blockIdx) {
+  const cfg = BLOCK_CONFIGS[blockIdx];
+  document.getElementById('instrBadge').textContent = `Bloque ${blockIdx + 1} / ${BLOCK_CONFIGS.length}`;
+  document.getElementById('instrTitle').textContent = lang === 'es' ? cfg.name_es : cfg.name_en;
+  document.getElementById('instrSubtitle').textContent = cfg.phase === 'practice'
+    ? (lang==='es' ? 'BLOQUE DE PRÁCTICA' : 'PRACTICE BLOCK')
+    : (lang==='es' ? 'BLOQUE PRINCIPAL' : 'MAIN BLOCK');
+  document.getElementById('instrDesc').innerHTML = lang === 'es'
+    ? 'Clasifica cada palabra que aparezca usando las teclas <strong style="color:var(--accent)">E</strong> (izquierda) y <strong style="color:var(--accent2)">I</strong> (derecha).<br>Responde lo más <strong style="color:var(--accent)">rápido y preciso</strong> posible.'
+    : 'Classify each word using keys <strong style="color:var(--accent)">E</strong> (left) and <strong style="color:var(--accent2)">I</strong> (right).<br>Respond as <strong style="color:var(--accent)">fast and accurately</strong> as possible.';
+  document.getElementById('instrCategories').innerHTML = buildInstrCatHTML(cfg);
+  showScreen('screen-instructions');
+}
+
+function startBlock() {
+  const cfg = BLOCK_CONFIGS[currentBlockIdx];
+  document.getElementById('phaseLabel').textContent = lang==='es' ? cfg.name_es : cfg.name_en;
+  document.getElementById('blockLabel').textContent = `BLOQUE ${currentBlockIdx+1}/${BLOCK_CONFIGS.length}`;
+  document.getElementById('catHeader').innerHTML = getCatHeaderHTML(cfg);
+  showScreen('screen-task');
+  nextTrial();
+}
+
+function getBlockStart(blockIdx) {
+  let s = 0;
+  for (let i = 0; i < blockIdx; i++) s += BLOCK_CONFIGS[i].trials;
+  return s;
+}
+
+function nextTrial() {
+  const blockStart = getBlockStart(currentBlockIdx);
+  const blockEnd   = blockStart + BLOCK_CONFIGS[currentBlockIdx].trials;
+  if (currentTrialIdx >= blockEnd) {
+    if (currentBlockIdx < BLOCK_CONFIGS.length - 1) {
+      showBreak(currentBlockIdx);
+    } else {
+      showLikert();
+    }
+    return;
+  }
+  const trial = trials[currentTrialIdx];
+  const blockTrialNum = currentTrialIdx - blockStart + 1;
+  const blockTotal    = BLOCK_CONFIGS[currentBlockIdx].trials;
+  document.getElementById('progressBar').style.width = (currentTrialIdx / trials.length * 100) + '%';
+  document.getElementById('trialCounter').textContent = `${lang==='es'?'Ensayo':'Trial'} ${blockTrialNum} / ${blockTotal}`;
+  setButtonsEnabled(false);
+  waiting = false;
+  awaitingCorrection = false;
+  document.getElementById('fixation').style.display = 'block';
+  document.getElementById('stimCard').classList.remove('visible');
+  if (trialTimer) clearTimeout(trialTimer);
+  trialTimer = setTimeout(() => showStimulus(trial), ISI);
+}
+
+function showStimulus(trial) {
+  document.getElementById('fixation').style.display = 'none';
+  const wordEl = document.getElementById('stimWord');
+  const typeEl = document.getElementById('stimType');
+  wordEl.textContent = trial.word;
+  wordEl.className = 'stim-word';
+  if (trial.wordType === 'surname')    wordEl.classList.add('surname');
+  else if (trial.wordType === 'warmth')     wordEl.classList.add('warmth');
+  else if (trial.wordType === 'competence') wordEl.classList.add('comp');
+  if (lang === 'es') {
+    if (trial.wordType === 'surname')    typeEl.textContent = 'APELLIDO';
+    else if (trial.wordType === 'warmth')     typeEl.textContent = 'CALIDEZ';
+    else if (trial.wordType === 'competence') typeEl.textContent = 'COMPETENCIA';
+  } else {
+    if (trial.wordType === 'surname')    typeEl.textContent = 'SURNAME';
+    else if (trial.wordType === 'warmth')     typeEl.textContent = 'WARMTH';
+    else if (trial.wordType === 'competence') typeEl.textContent = 'COMPETENCE';
+  }
+  document.getElementById('stimCard').classList.add('visible');
+  setButtonsEnabled(true);
+  waiting = true;
+  stimStart = performance.now();
+}
+
+function showBreak(blockIdx) {
+  const nextCfg = BLOCK_CONFIGS[blockIdx + 1];
+  document.getElementById('breakTitle').textContent = lang==='es' ? 'Bloque completado' : 'Block complete';
+  document.getElementById('breakDesc').textContent = lang==='es'
+    ? `Siguiente: ${nextCfg.name_es}. Tómate un momento y continúa cuando estés listo.`
+    : `Next: ${nextCfg.name_en}. Take a moment and continue when ready.`;
+  showScreen('screen-break');
+}
+
+function nextBlock() {
+  currentBlockIdx++;
+  showInstructions(currentBlockIdx);
+}
+
+function respond(key) {
+  if (!waiting && !awaitingCorrection) return;
+  const trial = trials[currentTrialIdx];
+  const now = performance.now();
+  if (awaitingCorrection) {
+    if (key === trial.correctKey) {
+      trial.errorRt = now - errorStart;
+      awaitingCorrection = false;
+      waiting = false;
+      setButtonsEnabled(false);
+      hideErrorX();
+      if (trial.phase === 'main') mainTrialLog.push(trial);
+      const payload = { ...trial, participant_id: participantId, language: lang, timestamp: new Date().toISOString() };
+      sendTrial(payload);
+      currentTrialIdx++;
+      setTimeout(nextTrial, 200);
+    }
+    return;
+  }
+  waiting = false;
+  setButtonsEnabled(false);
+  const rt = now - stimStart;
+  const correct = (key === trial.correctKey);
+  trial.responseKey = key;
+  trial.rt = rt;
+  trial.correct = correct;
+  trial.timestamp = new Date().toISOString();
+  const flash = document.getElementById('feedbackFlash');
+  if (correct) {
+    flash.className = 'feedback-flash correct';
+    setTimeout(() => { flash.className = 'feedback-flash'; }, 150);
+    if (trial.phase === 'main') mainTrialLog.push(trial);
+    const payload = { ...trial, participant_id: participantId, language: lang, timestamp: trial.timestamp };
+    sendTrial(payload);
+    currentTrialIdx++;
+    setTimeout(nextTrial, 200);
+  } else {
+    flash.className = 'feedback-flash wrong';
+    setTimeout(() => { flash.className = 'feedback-flash'; }, 150);
+    showErrorX();
+    errorStart = now;
+    awaitingCorrection = true;
+    setButtonsEnabled(true);
+  }
+}
+
+function showErrorX() { document.getElementById('errorX').classList.add('show'); }
+function hideErrorX()  { document.getElementById('errorX').classList.remove('show'); }
+function setButtonsEnabled(enabled) {
+  document.getElementById('btnLeft').disabled  = !enabled;
+  document.getElementById('btnRight').disabled = !enabled;
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'e' || e.key === 'E') respond('left');
+  if (e.key === 'i' || e.key === 'I') respond('right');
+});
+
+const LIKERT_QUESTIONS = {
+  es: [
+    { id:'q1', q:'¿Qué tan <strong>confiable</strong> te parece Anthropic (empresa de Amodei)?', surname:'Amodei' },
+    { id:'q2', q:'¿Qué tan <strong>ético</strong> percibes el liderazgo de <strong>Altman</strong> (OpenAI)?', surname:'Altman' },
+    { id:'q3', q:'¿Qué tan <strong>cercano o humano</strong> te parece <strong>LeCun</strong> como figura pública?', surname:'LeCun' },
+    { id:'q4', q:'¿Qué tan <strong>seguro</strong> te sientes con la IA que desarrolla <strong>Musk</strong>?', surname:'Musk' },
+    { id:'q5', q:'En general, ¿qué tanto confías en que los líderes de IA actúan por el bien común?', surname:'general' },
+  ],
+  en: [
+    { id:'q1', q:'How <strong>trustworthy</strong> does Anthropic (Amodei\'s company) seem to you?', surname:'Amodei' },
+    { id:'q2', q:'How <strong>ethical</strong> do you perceive <strong>Altman</strong>\'s (OpenAI) leadership?', surname:'Altman' },
+    { id:'q3', q:'How <strong>warm and human</strong> does <strong>LeCun</strong> seem as a public figure?', surname:'LeCun' },
+    { id:'q4', q:'How <strong>safe</strong> do you feel about the AI developed by <strong>Musk</strong>?', surname:'Musk' },
+    { id:'q5', q:'Overall, how much do you trust AI leaders to act for the common good?', surname:'general' },
+  ]
+};
+
+function showLikert() {
+  const qs = LIKERT_QUESTIONS[lang];
+  const scaleLabel = lang === 'es'
+    ? ['Nada','Poco','Algo','Bastante','Mucho']
+    : ['Not at all','Slightly','Somewhat','Quite','Very much'];
+  let html = '';
+  qs.forEach(q => {
+    html += `
+      <div class="likert-item">
+        <div class="likert-q">${q.q}</div>
+        <div class="likert-scale">
+          ${[1,2,3,4,5].map(v => `<div class="likert-opt" data-q="${q.id}" data-v="${v}" onclick="selectLikert('${q.id}',${v},this)">${v}</div>`).join('')}
+        </div>
+        <div class="likert-labels"><span>${scaleLabel[0]}</span><span>${scaleLabel[4]}</span></div>
+      </div>
+    `;
+  });
+  document.getElementById('likertTitle').textContent = lang === 'es' ? 'Evaluación consciente' : 'Explicit evaluation';
+  document.getElementById('likertItems').innerHTML = html;
+  document.getElementById('likertSubmitBtn').disabled = true;
+  showScreen('screen-likert');
+}
+
+function selectLikert(qid, val, el) {
+  document.querySelectorAll(`.likert-opt[data-q="${qid}"]`).forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  likertAnswers[qid] = val;
+  const qs = LIKERT_QUESTIONS[lang];
+  const allAnswered = qs.every(q => likertAnswers[q.id] !== undefined);
+  document.getElementById('likertSubmitBtn').disabled = !allAnswered;
+}
+
+function submitLikert() {
+  try {
+    _supabase.from('iat_likert').insert({
+      participant_id: participantId,
+      language: lang,
+      q1: likertAnswers.q1, q2: likertAnswers.q2, q3: likertAnswers.q3,
+      q4: likertAnswers.q4, q5: likertAnswers.q5,
+      timestamp: new Date().toISOString()
+    });
+  } catch(e) { console.warn(e); }
+  buildResults();
+  showScreen('screen-results');
+}
+
+function avg(arr) {
+  if (!arr.length) return 0;
+  return arr.reduce((a,b) => a+b, 0) / arr.length;
+}
+function sd(arr) {
+  if (arr.length < 2) return 1;
+  const m = avg(arr);
+  return Math.sqrt(arr.reduce((s,x) => s + (x-m)**2, 0) / arr.length);
+}
+function computeDScore() {
+  const block3 = mainTrialLog.filter(t => t.blockIndex === 2 && t.correct);
+  const block5 = mainTrialLog.filter(t => t.blockIndex === 4 && t.correct);
+  if (!block3.length || !block5.length) return 0;
+  const pooled = sd([...block3.map(t=>t.rt), ...block5.map(t=>t.rt)]);
+  return (avg(block5.map(t=>t.rt)) - avg(block3.map(t=>t.rt))) / pooled;
+}
+function computeDScoreBySurname(surname) {
+  const b3 = mainTrialLog.filter(t => t.blockIndex === 2 && t.correct && t.word === surname);
+  const b5 = mainTrialLog.filter(t => t.blockIndex === 4 && t.correct && t.word === surname);
+  if (!b3.length || !b5.length) return null;
+  const pooled = sd([...b3.map(t=>t.rt), ...b5.map(t=>t.rt)]);
+  if (!pooled) return null;
+  return (avg(b5.map(t=>t.rt)) - avg(b3.map(t=>t.rt))) / pooled;
+}
+
+function buildResults() {
+  const main = mainTrialLog;
+  document.getElementById('resultsMeta').textContent = `Participante ${participantId} · ${lang.toUpperCase()} · ${main.length} ensayos principales · ${new Date().toLocaleDateString()}`;
+  if (!main.length) {
+    document.getElementById('statsGrid').innerHTML = '<p style="color:var(--muted)">Sin datos.</p>';
+    return;
+  }
+  const correct   = main.filter(t => t.correct);
+  const incorrect = main.filter(t => !t.correct);
+  const accuracy  = (correct.length / main.length * 100).toFixed(1);
+  const overallRT = avg(correct.map(t => t.rt)).toFixed(0);
+  const dScore    = computeDScore().toFixed(3);
+  const b3correct = main.filter(t => t.blockIndex === 2 && t.correct);
+  const b5correct = main.filter(t => t.blockIndex === 4 && t.correct);
+  const rtB3 = avg(b3correct.map(t=>t.rt)).toFixed(0);
+  const rtB5 = avg(b5correct.map(t=>t.rt)).toFixed(0);
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Precisión global</div><div class="stat-value accent">${accuracy}%</div></div>
+    <div class="stat-card"><div class="stat-label">RT global (ms)</div><div class="stat-value accent3">${overallRT}</div></div>
+    <div class="stat-card"><div class="stat-label">D-score global</div><div class="stat-value purple">${dScore}</div></div>
+    <div class="stat-card"><div class="stat-label">RT Combinado A (ms)</div><div class="stat-value warm">${rtB3}</div></div>
+    <div class="stat-card"><div class="stat-label">RT Combinado B (ms)</div><div class="stat-value comp">${rtB5}</div></div>
+    <div class="stat-card"><div class="stat-label">Errores</div><div class="stat-value accent2">${incorrect.length}</div></div>
+  `;
+  const allSurnames = [...SURNAMES.real, ...SURNAMES.fake];
+  let barsHTML = '';
+  allSurnames.forEach(s => {
+    const d = computeDScoreBySurname(s.word);
+    if (d === null) return;
+    const pct  = Math.min(Math.abs(d) / 1.5 * 100, 100);
+    const col  = d > 0 ? 'var(--accent3)' : 'var(--accent2)';
+    const tag  = s.type === 'surname' && SURNAMES.real.find(r=>r.word===s.word) ? '★' : '○';
+    barsHTML += `
+      <div class="dscore-row">
+        <div class="dscore-label">${tag} ${s.word}</div>
+        <div class="dscore-track"><div class="dscore-fill" style="width:${pct}%; background:${col};"></div></div>
+        <div class="dscore-val" style="color:${col}">${d > 0 ? '+' : ''}${d.toFixed(2)}</div>
+      </div>
+    `;
+  });
+  document.getElementById('dscoreBars').innerHTML = barsHTML || '<p style="color:var(--muted);font-size:11px;">Datos insuficientes por apellido.</p>';
+  const surnameWords = allSurnames.map(s => s.word);
+  const rtB3bySurname = surnameWords.map(w => avg(b3correct.filter(t=>t.word===w).map(t=>t.rt)));
+  const rtB5bySurname = surnameWords.map(w => avg(b5correct.filter(t=>t.word===w).map(t=>t.rt)));
+  const rtCtx = document.getElementById('rtChart').getContext('2d');
+  new Chart(rtCtx, {
+    type: 'bar',
+    data: {
+      labels: surnameWords,
+      datasets: [
+        { label: 'Combinado A (ms)', data: rtB3bySurname.map(v=>v||0), backgroundColor: 'rgba(251,146,60,0.5)', borderColor: '#fb923c', borderWidth: 2 },
+        { label: 'Combinado B (ms)', data: rtB5bySurname.map(v=>v||0), backgroundColor: 'rgba(56,189,248,0.4)', borderColor: '#38bdf8', borderWidth: 2 },
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { labels: { color: '#888' } } }, scales: { y: { ticks: { color: '#888' }, grid: { color: '#1a1a1a' } } } }
+  });
+  const distCtx = document.getElementById('distChart').getContext('2d');
+  new Chart(distCtx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { label: 'Combinado A', data: b3correct.map(t=>({x:t.trialIndex, y:t.rt})), backgroundColor: 'rgba(251,146,60,0.6)', pointRadius: 3 },
+        { label: 'Combinado B', data: b5correct.map(t=>({x:t.trialIndex, y:t.rt})), backgroundColor: 'rgba(56,189,248,0.5)', pointRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#888' } } },
+      scales: {
+        x: { title: { display: true, text: lang==='es'?'Índice de ensayo':'Trial index', color:'#666' }, ticks: { color: '#888' }, grid: { color: '#1a1a1a' } },
+        y: { title: { display: true, text: 'RT (ms)', color:'#666' }, ticks: { color: '#888' }, grid: { color: '#1a1a1a' } }
+      }
+    }
+  });
+  document.getElementById('trialLog').innerHTML = main.map(t => `
+    <div class="trial-row">
+      <span style="color:var(--muted)">${t.trialIndex}</span>
+      <span style="color:var(--iat-color);font-size:10px">${t.word}</span>
+      <span style="color:${t.wordType==='warmth'?'var(--warmth-color)':t.wordType==='competence'?'var(--comp-color)':'var(--muted)'}; font-size:9px">${t.category}</span>
+      <span>${t.rt ? Math.round(t.rt) : '—'}</span>
+      <span>${t.correct ? '<span style="color:var(--accent3)">✓</span>' : '<span style="color:var(--accent2)">✗</span>'}</span>
+    </div>
+  `).join('');
+  document.getElementById('paperText').textContent = `
+Implicit Association Test (IAT) — Nombres de Líderes IA
+Asociaciones Implícitas: Calidez y Competencia
+
+Participante: ${participantId}
+Idioma: ${lang.toUpperCase()}
+Fecha: ${new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' })}
+
+Diseño:
+IAT de 5 bloques según procedimiento estándar (Greenwald, McGhee & Schwartz, 1998).
+Estímulos: apellidos reales (Amodei, Altman, LeCun, Musk, Hinton) y
+apellidos inventados de control (Valori, Forthen, Amaris, Driskan, Brentow, Vexon, Comel).
+Atributos: calidez (positivo/negativo) y competencia (positivo/negativo).
+Modelo teórico: Warmth-Competence (Fiske et al., 2007).
+
+Resultados:
+Ensayos principales analizados: N = ${main.length}
+RT medio global (ensayos correctos): M = ${overallRT} ms
+Precisión global: ${accuracy}%
+RT Combinado A (apellidos reales + positivo): M = ${rtB3} ms
+RT Combinado B (apellidos reales + negativo): M = ${rtB5} ms
+D-score global: D = ${dScore}
+
+Interpretación del D-score:
+D > 0 indica que los apellidos reales se asocian más fácilmente con atributos
+positivos (calidez + competencia) que con negativos.
+D < 0 indica patrón inverso (asociación negativa implícita).
+|D| < 0.2 = efecto mínimo · 0.2–0.5 = pequeño · 0.5–0.8 = moderado · > 0.8 = grande.
+
+Evaluación explícita (Likert 1–5):
+${Object.entries(likertAnswers).map(([k,v]) => `  ${k}: ${v}`).join('\n')}
+
+Nota: Los datos implícitos (IAT) y explícitos (Likert) pueden divergir,
+revelando disociación entre actitudes conscientes e inconscientes.
+
+Referencias:
+Greenwald, A. G., McGhee, D. E., & Schwartz, J. L. K. (1998). Measuring individual
+  differences in implicit cognition. Journal of Personality and Social Psychology, 74, 1464–1480.
+Greenwald, A. G., Nosek, B. A., & Banaji, M. R. (2003). Understanding and using the
+  IAT: An improved scoring algorithm. Journal of Personality and Social Psychology, 85, 197–216.
+Fiske, S. T., Cuddy, A. J. C., & Glick, P. (2007). Universal dimensions of social cognition.
+  Trends in Cognitive Sciences, 11(2), 77–83.`;
+}
+
+function exportCSV() {
+  const headers = ['trial_index','block_index','block_name','phase','word','category','word_type','correct_key','response_key','rt_ms','correct','error_rt_ms','timestamp'];
+  const rows = mainTrialLog.map(t => [
+    t.trialIndex, t.blockIndex, t.blockName, t.phase, t.word, t.category, t.wordType,
+    t.correctKey, t.responseKey, t.rt ? Math.round(t.rt) : '',
+    t.correct, t.errorRt ? Math.round(t.errorRt) : '', t.timestamp
+  ]);
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  downloadFile(`iat_${participantId}.csv`, csv, 'text/csv');
+}
+function exportJSON() {
+  downloadFile(`iat_${participantId}.json`, JSON.stringify({
+    participantId, language: lang, task: 'IAT_nombres',
+    exported: new Date().toISOString(),
+    likert: likertAnswers,
+    trials: mainTrialLog
+  }, null, 2), 'application/json');
+}
+function downloadFile(name, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = name;
+  a.click();
+}
+function resetStudy() {
+  lang = null;
+  currentBlockIdx = 0;
+  currentTrialIdx = 0;
+  trials = [];
+  mainTrialLog = [];
+  likertAnswers = {};
+  waiting = false;
+  awaitingCorrection = false;
+  if (trialTimer) clearTimeout(trialTimer);
+  document.getElementById('btn-es').classList.remove('selected');
+  document.getElementById('btn-en').classList.remove('selected');
+  document.getElementById('startBtn').disabled = true;
+  regenerateID();
+  showScreen('screen-intro');
+}
+</script>
+</body>
+</html>
