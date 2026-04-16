@@ -10,6 +10,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
+/* =====================================================
+
+   ===================================================== */
 :root {
   --bg: #0a0a0a;
   --surface: #111111;
@@ -39,85 +42,7 @@ body::before {
   pointer-events: none;
   z-index: 0;
 }
-/* LOGIN SCREEN */
-#login-screen {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(10,10,10,0.96);
-  backdrop-filter: blur(4px);
-}
-.login-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 40px 32px;
-  width: 340px;
-  border-radius: 8px;
-  text-align: center;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-}
-.login-box h1 {
-  font-family: 'Syne', sans-serif;
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--accent);
-  margin-bottom: 8px;
-}
-.login-box p {
-  font-size: 11px;
-  color: var(--muted);
-  margin-bottom: 28px;
-}
-.login-box input {
-  width: 100%;
-  padding: 12px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: 'Space Mono', monospace;
-  font-size: 13px;
-  border-radius: 4px;
-  margin-bottom: 12px;
-}
-.login-box input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-.login-btn {
-  width: 100%;
-  padding: 12px;
-  background: var(--accent);
-  color: #000;
-  border: none;
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  border-radius: 4px;
-  margin-top: 8px;
-}
-.logout-btn {
-  background: var(--surface);
-  border: 1px solid var(--accent2);
-  color: var(--accent2);
-  margin-left: 12px;
-}
-.login-error {
-  color: var(--accent2);
-  font-size: 11px;
-  margin-top: 12px;
-}
-/* DASHBOARD (inicialmente oculto) */
-#dashboard {
-  display: none;
-  position: relative;
-  z-index: 1;
-  min-height: 100vh;
-  flex-direction: column;
-}
+#dashboard { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
 .topbar {
   display: flex; justify-content: space-between; align-items: center;
   padding: 20px 32px; border-bottom: 1px solid var(--border);
@@ -201,20 +126,6 @@ canvas { max-height: 260px; width: 100%; }
 </style>
 </head>
 <body>
-
-<!-- PANTALLA DE LOGIN -->
-<div id="login-screen">
-  <div class="login-box">
-    <h1>🔐 ACCESO RESTRINGIDO</h1>
-    <p>Dashboard de administración</p>
-    <input type="email" id="login-email" placeholder="Email" autocomplete="off">
-    <input type="password" id="login-password" placeholder="Contraseña">
-    <button class="login-btn" onclick="login()">INICIAR SESIÓN</button>
-    <div id="login-error" class="login-error" style="display:none;"></div>
-  </div>
-</div>
-
-<!-- DASHBOARD (contenido real) -->
 <div id="dashboard">
   <div class="topbar">
     <div class="topbar-logo">HCI · COGNITIVE LAB | DASHBOARD</div>
@@ -223,7 +134,6 @@ canvas { max-height: 260px; width: 100%; }
       <button class="btn-sm btn-outline" onclick="loadData()">↺ REFRESH</button>
       <button class="btn-sm btn-accent" onclick="exportCSV()">↓ CSV</button>
       <button class="btn-sm btn-accent" onclick="exportPDF()" style="background:var(--accent2);">📄 PDF</button>
-      <button class="btn-sm logout-btn" onclick="logout()">🚪 CERRAR SESIÓN</button>
     </div>
   </div>
   <div class="task-nav">
@@ -236,6 +146,13 @@ canvas { max-height: 260px; width: 100%; }
     <button class="task-btn" data-task="posner"  onclick="switchTask('posner')">Posner</button>
     <button class="task-btn" data-task="taskswitch" onclick="switchTask('taskswitch')">Task Switch</button>
     <button class="task-btn" data-task="wcst"    onclick="switchTask('wcst')">WCST</button>
+    <button class="task-btn" data-task="sart"    onclick="switchTask('sart')">SART</button>
+    <button class="task-btn" data-task="corsi"   onclick="switchTask('corsi')">Corsi</button>
+    <button class="task-btn" data-task="digit_span" onclick="switchTask('digit_span')">Digit Span</button>
+    <button class="task-btn" data-task="navon"   onclick="switchTask('navon')">Navon</button>
+    <button class="task-btn" data-task="iowa"    onclick="switchTask('iowa')">Iowa</button>
+    <button class="task-btn" data-task="tol"     onclick="switchTask('tol')">Tower of London</button>
+    <button class="task-btn" data-task="iat"     onclick="switchTask('iat')">IAT</button>
   </div>
   <div class="main" id="reportContainer">
     <div class="filters-bar">
@@ -273,17 +190,16 @@ canvas { max-height: 260px; width: 100%; }
     </div>
   </div>
 </div>
-
 <script>
 // ============================================================
-//  SUPABASE CLIENT (SIN CONFLICTO DE NOMBRES)
+//  SUPABASE CLIENT
 // ============================================================
 const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================================
-//  CONFIGURACIÓN DE TABLAS POR TAREA
+//  CONFIGURACIÓN DE TAREAS (incluye IAT)
 // ============================================================
 const TASK_CONFIG = {
   stroop:  { table: 'stroop_trials',  rtField: 'rt',    groupField: 'cohort' },
@@ -294,7 +210,14 @@ const TASK_CONFIG = {
   nback:   { table: 'nback_trials',   rtField: 'rt_ms', groupField: 'cohort' },
   posner:  { table: 'posner_trials',  rtField: 'rt_ms', groupField: 'cohort' },
   taskswitch: { table: 'task_switch_trials', rtField: 'rt_ms', groupField: 'cohort' },
-  wcst:    { table: 'wcst_trials',    rtField: 'rt_ms', groupField: 'cohort' }
+  wcst:    { table: 'wcst_trials',    rtField: 'rt_ms', groupField: 'cohort' },
+  sart:    { table: 'sart_trials',    rtField: 'rt_ms', groupField: 'cohort' },
+  corsi:   { table: 'corsi_trials',   rtField: 'rt_mean_ms', groupField: 'cohort' },
+  digit_span: { table: 'digit_span_trials', rtField: 'rt_ms', groupField: 'cohort' },
+  navon:   { table: 'navon_trials',   rtField: 'rt_ms', groupField: 'cohort' },
+  iowa:    { table: 'iowa_trials',    rtField: 'rt_ms', groupField: 'cohort' },
+  tol:     { table: 'tol_trials',     rtField: 'time_seconds', groupField: 'cohort' },
+  iat:     { table: 'iat_trials',     rtField: 'rt_ms', groupField: 'cohort' }
 };
 
 function normalizeRow(row, cfg) {
@@ -310,43 +233,23 @@ let allData = [];
 let chartInstance = null;
 
 // ============================================================
-//  AUTENTICACIÓN
+//  FUNCIONES AUXILIARES
 // ============================================================
-async function login() {
-  const email = document.getElementById('login-email').value;
-  const password = document.getElementById('login-password').value;
-  const errorDiv = document.getElementById('login-error');
-  errorDiv.style.display = 'none';
-  try {
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    loadData();
-  } catch (err) {
-    errorDiv.style.display = 'block';
-    errorDiv.innerText = 'Error: ' + (err.message || 'Credenciales incorrectas');
-  }
-}
+function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+function std(arr) { if(arr.length<2) return 0; let m=mean(arr); return Math.sqrt(arr.reduce((s,x)=>s+(x-m)**2,0)/(arr.length-1)); }
 
-async function logout() {
-  await supabaseClient.auth.signOut();
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('login-email').value = '';
-  document.getElementById('login-password').value = '';
-}
-
-async function checkSession() {
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    loadData();
-  } else {
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('dashboard').style.display = 'none';
-  }
+// Cálculo de D-score para IAT (Greenwald et al., 2003)
+function computeIATdScore(data) {
+  // data son todos los trials de un participante
+  const block3 = data.filter(t => t.block_index === 2 && t.correct === true);
+  const block5 = data.filter(t => t.block_index === 4 && t.correct === true);
+  if (block3.length === 0 || block5.length === 0) return null;
+  const rt3 = block3.map(t => t.rt_ms).filter(v => v !== null && v !== undefined);
+  const rt5 = block5.map(t => t.rt_ms).filter(v => v !== null && v !== undefined);
+  if (rt3.length < 2 || rt5.length < 2) return null;
+  const pooled = Math.sqrt((std(rt3)**2 + std(rt5)**2) / 2);
+  if (pooled === 0) return null;
+  return (mean(rt5) - mean(rt3)) / pooled;
 }
 
 // ============================================================
@@ -376,7 +279,7 @@ async function loadData() {
   } catch(e) {
     errorDiv.style.display = 'block';
     errorDiv.innerHTML = `❌ Error: ${e.message}<br>· La tabla ${cfg.table} no existe o no tiene permisos SELECT.`;
-    document.getElementById('participantTableBody').innerHTML = '<td><td colspan="10" class="loading">Sin datos</td></tr>';
+    document.getElementById('participantTableBody').innerHTML = '<tr><td colspan="10" class="loading">Sin datos</td></tr>';
   }
 }
 
@@ -394,21 +297,22 @@ function applyFilters() {
   renderChart(filtered);
 }
 
-function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
-function std(arr) { if(arr.length<2) return 0; let m=mean(arr); return Math.sqrt(arr.reduce((s,x)=>s+(x-m)**2,0)/(arr.length-1)); }
-
 // ============================================================
-//  RENDER ESTADÍSTICAS (incluye WCST)
+//  RENDER ESTADÍSTICAS (incluye IAT)
 // ============================================================
 function renderStats(data) {
   const container = document.getElementById('statsContainer');
-  if (!data.length) { container.innerHTML = '<div class="stat-card"><div class="stat-label">Sin datos</div><div class="stat-value">—</div></div>'; return; }
+  if (!data.length) {
+    container.innerHTML = '<div class="stat-card"><div class="stat-label">Sin datos</div><div class="stat-value">—</div></div>';
+    return;
+  }
   const participants = [...new Set(data.map(d=>d.participant_id).filter(Boolean))];
   const totalTrials = data.length;
   const correctCount = data.filter(d=>d.correct).length;
   let html = `<div class="stat-card"><div class="stat-label">Participantes</div><div class="stat-value accent">${participants.length}</div></div>
               <div class="stat-card"><div class="stat-label">Total ensayos</div><div class="stat-value">${totalTrials}</div><div class="stat-sub">${correctCount} correctos</div></div>
               <div class="stat-card"><div class="stat-label">Precisión global</div><div class="stat-value accent3">${(correctCount/totalTrials*100).toFixed(1)}%</div></div>`;
+
   if (['stroop','flanker','simon'].includes(currentTask)) {
     const valid = data.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
     const cong = valid.filter(t => t.congruent).map(t=>t.rt);
@@ -418,7 +322,8 @@ function renderStats(data) {
     html += `<div class="stat-card"><div class="stat-label">${label}</div><div class="stat-value accent2">${effect} ms</div><div class="stat-sub">${valid.length} válidos</div></div>
              <div class="stat-card"><div class="stat-label">RT Congruente</div><div class="stat-value">${cong.length ? Math.round(mean(cong)) : '—'} ms</div></div>
              <div class="stat-card"><div class="stat-label">RT Incongruente</div><div class="stat-value">${incong.length ? Math.round(mean(incong)) : '—'} ms</div></div>`;
-  } else if (currentTask === 'gonogo') {
+  }
+  else if (currentTask === 'gonogo') {
     const go = data.filter(t => t.stimulus_type === 'go');
     const nogo = data.filter(t => t.stimulus_type === 'nogo');
     const hits = go.filter(t=>t.correct).length;
@@ -427,13 +332,15 @@ function renderStats(data) {
     const dPrime = ((Math.log((hr+0.01)/(1.01-hr)) - Math.log((far+0.01)/(1.01-far))) / 1.414).toFixed(3);
     html += `<div class="stat-card"><div class="stat-label">d'</div><div class="stat-value accent3">${dPrime}</div></div>
              <div class="stat-card"><div class="stat-label">Aciertos / FA</div><div class="stat-value">${hits} / ${fa}</div></div>`;
-  } else if (currentTask === 'ant') {
+  }
+  else if (currentTask === 'ant') {
     const valid = data.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
     const cong = valid.filter(t => t.flanker_type === 'congruent').map(t=>t.rt);
     const incong = valid.filter(t => t.flanker_type === 'incongruent').map(t=>t.rt);
     const conflict = (cong.length && incong.length) ? Math.round(mean(incong)-mean(cong)) : '—';
     html += `<div class="stat-card"><div class="stat-label">Conflicto ANT</div><div class="stat-value accent2">${conflict} ms</div></div>`;
-  } else if (currentTask === 'nback') {
+  }
+  else if (currentTask === 'nback') {
     const targets = data.filter(t => t.is_target === true);
     const nontargets = data.filter(t => t.is_target === false);
     const hits = targets.filter(t=>t.correct).length, fa = nontargets.filter(t=>!t.correct).length;
@@ -441,7 +348,8 @@ function renderStats(data) {
     const dPrime = ((Math.log((hr+0.01)/(1.01-hr)) - Math.log((far+0.01)/(1.01-far))) / 1.414).toFixed(3);
     html += `<div class="stat-card"><div class="stat-label">d' N-back</div><div class="stat-value accent3">${dPrime}</div></div>
              <div class="stat-card"><div class="stat-label">Aciertos/FA</div><div class="stat-value">${hits}/${fa}</div></div>`;
-  } else if (currentTask === 'posner') {
+  }
+  else if (currentTask === 'posner') {
     const valid = data.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
     const validCue = valid.filter(t => t.valid_trial === true).map(t=>t.rt);
     const invalidCue = valid.filter(t => t.valid_trial === false).map(t=>t.rt);
@@ -449,7 +357,8 @@ function renderStats(data) {
     html += `<div class="stat-card"><div class="stat-label">RT Válido</div><div class="stat-value accent3">${validCue.length ? Math.round(mean(validCue)) : '—'} ms</div></div>
              <div class="stat-card"><div class="stat-label">RT Inválido</div><div class="stat-value accent2">${invalidCue.length ? Math.round(mean(invalidCue)) : '—'} ms</div></div>
              <div class="stat-card"><div class="stat-label">Efecto orientación</div><div class="stat-value accent">${effect} ms</div></div>`;
-  } else if (currentTask === 'taskswitch') {
+  }
+  else if (currentTask === 'taskswitch') {
     const valid = data.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
     const repeat = valid.filter(t => t.condition === 'repeat').map(t=>t.rt);
     const switchCond = valid.filter(t => t.condition === 'switch').map(t=>t.rt);
@@ -457,7 +366,8 @@ function renderStats(data) {
     html += `<div class="stat-card"><div class="stat-label">RT Repetición</div><div class="stat-value accent3">${repeat.length ? Math.round(mean(repeat)) : '—'} ms</div></div>
              <div class="stat-card"><div class="stat-label">RT Cambio</div><div class="stat-value accent2">${switchCond.length ? Math.round(mean(switchCond)) : '—'} ms</div></div>
              <div class="stat-card"><div class="stat-label">Coste de cambio</div><div class="stat-value accent">${switchCost} ms</div><div class="stat-sub">${valid.length} válidos</div></div>`;
-  } else if (currentTask === 'wcst') {
+  }
+  else if (currentTask === 'wcst') {
     const categories = data.filter(t => t.completed_category === true).length;
     const perseverative = data.filter(t => t.is_perseverative === true).length;
     const setLoss = data.filter(t => t.is_set_loss === true).length;
@@ -468,18 +378,90 @@ function renderStats(data) {
              <div class="stat-card"><div class="stat-label">Pérdidas de set</div><div class="stat-value accent2">${setLoss}</div></div>
              <div class="stat-card"><div class="stat-label">Aciertos conceptuales (%)</div><div class="stat-value accent3">${conceptualPercent}%</div></div>`;
   }
+  else if (currentTask === 'sart') {
+    const go = data.filter(t => t.is_target === true);
+    const nogo = data.filter(t => t.is_target === false);
+    const hits = go.filter(t=>t.correct).length;
+    const fa = nogo.filter(t=>!t.correct).length;
+    const hr = hits/(go.length||1), far = fa/(nogo.length||1);
+    const dPrime = ((Math.log((hr+0.01)/(1.01-hr)) - Math.log((far+0.01)/(1.01-far))) / 1.414).toFixed(3);
+    html += `<div class="stat-card"><div class="stat-label">d' SART</div><div class="stat-value accent3">${dPrime}</div></div>
+             <div class="stat-card"><div class="stat-label">Aciertos/FA</div><div class="stat-value">${hits}/${fa}</div></div>`;
+  }
+  else if (currentTask === 'corsi') {
+    const maxSpan = Math.max(...data.map(t=>t.sequence_length), 0);
+    const errors = data.filter(t => !t.correct).length;
+    const acc = (data.filter(t=>t.correct).length / data.length * 100).toFixed(1);
+    html += `<div class="stat-card"><div class="stat-label">Span máximo</div><div class="stat-value accent">${maxSpan}</div></div>
+             <div class="stat-card"><div class="stat-label">Errores</div><div class="stat-value accent2">${errors}</div></div>
+             <div class="stat-card"><div class="stat-label">Precisión</div><div class="stat-value accent3">${acc}%</div></div>`;
+  }
+  else if (currentTask === 'digit_span') {
+    const forwardTrials = data.filter(t => t.mode === 'forward');
+    const backwardTrials = data.filter(t => t.mode === 'backward');
+    const maxForward = Math.max(...forwardTrials.map(t=>t.sequence_length), 0);
+    const maxBackward = Math.max(...backwardTrials.map(t=>t.sequence_length), 0);
+    html += `<div class="stat-card"><div class="stat-label">Span Forward</div><div class="stat-value accent">${maxForward}</div></div>
+             <div class="stat-card"><div class="stat-label">Span Backward</div><div class="stat-value accent2">${maxBackward}</div></div>`;
+  }
+  else if (currentTask === 'navon') {
+    const valid = data.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000);
+    const cong = valid.filter(t => t.congruent).map(t=>t.rt);
+    const incong = valid.filter(t => !t.congruent).map(t=>t.rt);
+    const effect = (cong.length && incong.length) ? Math.round(mean(incong)-mean(cong)) : '—';
+    html += `<div class="stat-card"><div class="stat-label">Efecto Navon</div><div class="stat-value accent2">${effect} ms</div></div>`;
+  }
+  else if (currentTask === 'iowa') {
+    const main = data.filter(t => t.phase === 'main');
+    const adv = main.filter(t => t.deck === 'C' || t.deck === 'D').length;
+    const disadv = main.filter(t => t.deck === 'A' || t.deck === 'B').length;
+    const net = adv - disadv;
+    const finalScore = main.length ? main[main.length-1]?.cumulative_score : 0;
+    html += `<div class="stat-card"><div class="stat-label">Índice neto</div><div class="stat-value accent">${net}</div></div>
+             <div class="stat-card"><div class="stat-label">Puntuación final</div><div class="stat-value accent3">${finalScore}</div></div>`;
+  }
+  else if (currentTask === 'tol') {
+    const main = data.filter(t => t.phase === 'main');
+    const exact = main.filter(t => t.exact_solution).length;
+    const avgMoves = main.reduce((a,b)=>a+b.moves_used,0)/main.length;
+    html += `<div class="stat-card"><div class="stat-label">Exactas</div><div class="stat-value accent">${exact}/${main.length}</div></div>
+             <div class="stat-card"><div class="stat-label">Media movimientos</div><div class="stat-value">${avgMoves.toFixed(1)}</div></div>`;
+  }
+  else if (currentTask === 'iat') {
+    // Estadísticas para IAT
+    const participantsIAT = [...new Set(data.map(d=>d.participant_id).filter(Boolean))];
+    const total = data.length;
+    const correct = data.filter(d => d.correct).length;
+    const acc = total ? (correct / total * 100).toFixed(1) : 0;
+    // Calcular D-score global a partir de los datos (agregando por participante y promediando)
+    let dScores = [];
+    for (let pid of participantsIAT) {
+      const pData = data.filter(d => d.participant_id === pid);
+      const d = computeIATdScore(pData);
+      if (d !== null) dScores.push(d);
+    }
+    const avgD = dScores.length ? (dScores.reduce((a,b)=>a+b,0)/dScores.length).toFixed(3) : '—';
+    html += `<div class="stat-card"><div class="stat-label">Participantes IAT</div><div class="stat-value accent">${participantsIAT.length}</div></div>
+             <div class="stat-card"><div class="stat-label">Ensayos totales</div><div class="stat-value">${total}</div></div>
+             <div class="stat-card"><div class="stat-label">Precisión global</div><div class="stat-value accent3">${acc}%</div></div>
+             <div class="stat-card"><div class="stat-label">D-score medio</div><div class="stat-value accent2">${avgD}</div></div>`;
+  }
   container.innerHTML = html;
 }
 
 // ============================================================
-//  TABLA DE PARTICIPANTES (incluye WCST)
+//  TABLA DE PARTICIPANTES (incluye IAT)
 // ============================================================
 function renderParticipantTable(data) {
   const participants = [...new Set(data.map(d=>d.participant_id).filter(Boolean))];
   const thead = document.getElementById('participantTableHead');
   const tbody = document.getElementById('participantTableBody');
   document.getElementById('tableCount').innerText = participants.length + ' participantes';
-  if (!participants.length) { thead.innerHTML = ''; tbody.innerHTML = '<tr><td colspan="10" class="loading">Sin datos</td></tr>'; return; }
+  if (!participants.length) {
+    thead.innerHTML = '';
+    tbody.innerHTML = '<td><td colspan="10" class="loading">Sin datos</td></tr>';
+    return;
+  }
   let columns = ['Participante', 'Grupo', 'Ensayos', 'Precisión'];
   if (['stroop','flanker','simon'].includes(currentTask)) columns.push('RT Cong', 'RT Incong', 'Efecto');
   else if (currentTask === 'gonogo') columns.push("d'", 'Aciertos', 'FA', 'RT Go');
@@ -488,6 +470,13 @@ function renderParticipantTable(data) {
   else if (currentTask === 'posner') columns.push('RT Válido', 'RT Inválido', 'Efecto');
   else if (currentTask === 'taskswitch') columns.push('RT Repetición', 'RT Cambio', 'Coste cambio');
   else if (currentTask === 'wcst') columns.push('Categorías', 'Persev.', 'Set loss', 'Conceptual%');
+  else if (currentTask === 'sart') columns.push("d'", 'Aciertos', 'FA', 'RT Go');
+  else if (currentTask === 'corsi') columns.push('Span máximo', 'Errores', 'Precisión');
+  else if (currentTask === 'digit_span') columns.push('Span Forward', 'Span Backward');
+  else if (currentTask === 'navon') columns.push('RT Cong', 'RT Incong', 'Efecto');
+  else if (currentTask === 'iowa') columns.push('Índice neto', 'Puntuación final', 'Ventajosas/Desv.');
+  else if (currentTask === 'tol') columns.push('Exactas', 'Media movimientos');
+  else if (currentTask === 'iat') columns.push('D-score', 'Precisión');
   thead.innerHTML = '<tr>' + columns.map(c => `<th>${c}</th>`).join('') + '</tr>';
   const rows = participants.map(pid => {
     const pData = data.filter(d => d.participant_id === pid);
@@ -539,6 +528,46 @@ function renderParticipantTable(data) {
       const conceptualTrials = pData.filter(t => t.trials_in_category >= 3).length;
       const conceptualPercent = (conceptualTrials / pData.length * 100).toFixed(1);
       extra = [categories, perseverative, setLoss, conceptualPercent+'%'];
+    } else if (currentTask === 'sart') {
+      const go = pData.filter(d => d.is_target === true);
+      const nogo = pData.filter(d => d.is_target === false);
+      const hits = go.filter(d=>d.correct).length, fa = nogo.filter(d=>!d.correct).length;
+      const hr = hits/(go.length||1), far = fa/(nogo.length||1);
+      const dp = ((Math.log((hr+0.01)/(1.01-hr)) - Math.log((far+0.01)/(1.01-far))) / 1.414).toFixed(3);
+      const rtGo = go.filter(d => d.correct && d.rt>=200 && d.rt<=2000).map(d=>d.rt);
+      extra = [dp, hits, fa, rtGo.length ? Math.round(mean(rtGo)) : '—'];
+    } else if (currentTask === 'corsi') {
+      const maxSpan = Math.max(...pData.map(t=>t.sequence_length), 0);
+      const errors = pData.filter(t => !t.correct).length;
+      const accCorsi = (pData.filter(t=>t.correct).length / pData.length * 100).toFixed(1);
+      extra = [maxSpan, errors, accCorsi+'%'];
+    } else if (currentTask === 'digit_span') {
+      const forward = pData.filter(t => t.mode === 'forward');
+      const backward = pData.filter(t => t.mode === 'backward');
+      const maxForward = Math.max(...forward.map(t=>t.sequence_length), 0);
+      const maxBackward = Math.max(...backward.map(t=>t.sequence_length), 0);
+      extra = [maxForward, maxBackward];
+    } else if (currentTask === 'navon') {
+      const valid = pData.filter(d => d.correct && d.rt >= 200 && d.rt <= 2000);
+      const cong = valid.filter(d => d.congruent).map(d=>d.rt);
+      const incong = valid.filter(d => !d.congruent).map(d=>d.rt);
+      extra = [cong.length ? Math.round(mean(cong)) : '—', incong.length ? Math.round(mean(incong)) : '—', (cong.length && incong.length) ? Math.round(mean(incong)-mean(cong)) : '—'];
+    } else if (currentTask === 'iowa') {
+      const main = pData.filter(t => t.phase === 'main');
+      const adv = main.filter(t => t.deck === 'C' || t.deck === 'D').length;
+      const disadv = main.filter(t => t.deck === 'A' || t.deck === 'B').length;
+      const net = adv - disadv;
+      const finalScore = main.length ? main[main.length-1]?.cumulative_score : 0;
+      extra = [net, finalScore, `${adv}/${disadv}`];
+    } else if (currentTask === 'tol') {
+      const main = pData.filter(t => t.phase === 'main');
+      const exact = main.filter(t => t.exact_solution).length;
+      const avgMoves = main.reduce((a,b)=>a+b.moves_used,0)/main.length;
+      extra = [`${exact}/${main.length}`, avgMoves.toFixed(1)];
+    } else if (currentTask === 'iat') {
+      const d = computeIATdScore(pData);
+      const accIAT = (pData.filter(t=>t.correct).length / pData.length * 100).toFixed(1);
+      extra = [d !== null ? d.toFixed(3) : '—', accIAT+'%'];
     }
     const shortId = pid.slice(-8);
     return '<tr>' + [shortId, groupTag, trials, acc+'%', ...extra].map(c => `<td>${c}</td>`).join('') + '</tr>';
@@ -547,7 +576,7 @@ function renderParticipantTable(data) {
 }
 
 // ============================================================
-//  GRÁFICO (incluye WCST)
+//  GRÁFICO (incluye IAT: D-score por participante)
 // ============================================================
 function renderChart(data) {
   const ctx = document.getElementById('taskChart').getContext('2d');
@@ -563,7 +592,7 @@ function renderChart(data) {
       labels.push(pid.slice(-6)); vals.push((cong.length && incong.length) ? mean(incong)-mean(cong) : 0);
     });
     labelY = 'Efecto (ms)'; color = '#e8ff4a';
-  } else if (currentTask === 'gonogo' || currentTask === 'nback') {
+  } else if (currentTask === 'gonogo' || currentTask === 'nback' || currentTask === 'sart') {
     participants.forEach(pid => {
       const pData = data.filter(d=>d.participant_id===pid);
       let dp = 0;
@@ -573,7 +602,13 @@ function renderChart(data) {
         const hr = go.filter(d=>d.correct).length/(go.length||1);
         const far = nogo.filter(d=>!d.correct).length/(nogo.length||1);
         dp = (Math.log((hr+0.01)/(1.01-hr)) - Math.log((far+0.01)/(1.01-far))) / 1.414;
-      } else {
+      } else if (currentTask === 'nback') {
+        const tgt = pData.filter(d=>d.is_target===true);
+        const non = pData.filter(d=>d.is_target===false);
+        const hr = tgt.filter(d=>d.correct).length/(tgt.length||1);
+        const far = non.filter(d=>!d.correct).length/(non.length||1);
+        dp = (Math.log((hr+0.01)/(1.01-hr)) - Math.log((far+0.01)/(1.01-far))) / 1.414;
+      } else if (currentTask === 'sart') {
         const tgt = pData.filter(d=>d.is_target===true);
         const non = pData.filter(d=>d.is_target===false);
         const hr = tgt.filter(d=>d.correct).length/(tgt.length||1);
@@ -617,6 +652,57 @@ function renderChart(data) {
       labels.push(pid.slice(-6)); vals.push(categories);
     });
     labelY = 'Categorías completadas'; color = '#e8ff4a';
+  } else if (currentTask === 'corsi') {
+    participants.forEach(pid => {
+      const pData = data.filter(d=>d.participant_id===pid);
+      const maxSpan = Math.max(...pData.map(t=>t.sequence_length), 0);
+      labels.push(pid.slice(-6)); vals.push(maxSpan);
+    });
+    labelY = 'Span máximo'; color = '#e8ff4a';
+  } else if (currentTask === 'digit_span') {
+    participants.forEach(pid => {
+      const pData = data.filter(d=>d.participant_id===pid);
+      const forward = pData.filter(t => t.mode === 'forward');
+      const maxForward = Math.max(...forward.map(t=>t.sequence_length), 0);
+      labels.push(pid.slice(-6)); vals.push(maxForward);
+    });
+    labelY = 'Span Forward'; color = '#e8ff4a';
+  } else if (currentTask === 'navon') {
+    participants.forEach(pid => {
+      const pData = data.filter(d=>d.participant_id===pid);
+      const valid = pData.filter(d=>d.correct && d.rt>=200 && d.rt<=2000);
+      const cong = valid.filter(d=>d.congruent).map(d=>d.rt);
+      const incong = valid.filter(d=>!d.congruent).map(d=>d.rt);
+      labels.push(pid.slice(-6)); vals.push((cong.length && incong.length) ? mean(incong)-mean(cong) : 0);
+    });
+    labelY = 'Efecto Navon (ms)'; color = '#e8ff4a';
+  } else if (currentTask === 'iowa') {
+    participants.forEach(pid => {
+      const pData = data.filter(d=>d.participant_id===pid);
+      const main = pData.filter(t => t.phase === 'main');
+      const adv = main.filter(t => t.deck === 'C' || t.deck === 'D').length;
+      const disadv = main.filter(t => t.deck === 'A' || t.deck === 'B').length;
+      const net = adv - disadv;
+      labels.push(pid.slice(-6)); vals.push(net);
+    });
+    labelY = 'Índice neto'; color = '#e8ff4a';
+  } else if (currentTask === 'tol') {
+    participants.forEach(pid => {
+      const pData = data.filter(d=>d.participant_id===pid);
+      const main = pData.filter(t => t.phase === 'main');
+      const exact = main.filter(t => t.exact_solution).length;
+      const total = main.length;
+      const pct = total ? (exact / total * 100) : 0;
+      labels.push(pid.slice(-6)); vals.push(pct);
+    });
+    labelY = 'Exactitud (%)'; color = '#e8ff4a';
+  } else if (currentTask === 'iat') {
+    participants.forEach(pid => {
+      const pData = data.filter(d=>d.participant_id===pid);
+      const d = computeIATdScore(pData);
+      labels.push(pid.slice(-6)); vals.push(d !== null ? d : 0);
+    });
+    labelY = 'D-score (IAT)'; color = '#a78bfa';
   } else {
     chartInstance = new Chart(ctx, { type:'bar', data:{ labels:['Sin datos'], datasets:[{data:[0]}] } });
     return;
@@ -629,18 +715,14 @@ function renderChart(data) {
 }
 
 // ============================================================
-//  EXPORTACIONES CORREGIDAS
+//  EXPORTACIONES CSV Y PDF
 // ============================================================
 function exportCSV() {
   if (!rawData.length) return;
   const headers = Object.keys(rawData[0]).join(',');
   const rows = rawData.map(row => Object.values(row).map(v => JSON.stringify(v ?? '')).join(',')).join('\n');
-  const blob = new Blob([headers + '\n' + rows], {type: 'text/csv;charset=utf-8;'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `${currentTask}_data_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(a.href);
+  const blob = new Blob([headers + '\n' + rows], {type: 'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${currentTask}_data_${new Date().toISOString().slice(0,10)}.csv`; a.click();
 }
 
 async function exportPDF() {
@@ -658,10 +740,8 @@ async function exportPDF() {
   pdf.save(`${currentTask}_dashboard_${new Date().toISOString().slice(0,10)}.pdf`);
 }
 
-// ============================================================
-//  INICIALIZACIÓN
-// ============================================================
-checkSession();
+// Inicializar
+loadData();
 </script>
 </body>
 </html>
