@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>SART · Sustained Attention</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ===== MISMOS ESTILOS QUE LAS TAREAS ANTERIORES ===== */
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --muted: #666;
+  --accent: #e8ff4a;
+  --accent2: #ff4a6e;
+  --accent3: #4affda;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Space Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(232,255,74,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,255,74,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; }
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 32px; border-bottom: 1px solid var(--border);
+  background: rgba(10,10,10,0.8); backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+.badge { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; border: 1px solid var(--border); padding: 4px 10px; border-radius: 2px; }
+#screen-intro { justify-content: center; align-items: center; padding: 40px 32px; }
+.intro-content { max-width: 600px; width: 100%; animation: fadeUp 0.6s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.intro-tag { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+.intro-title { font-family: 'Syne', sans-serif; font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.05; margin-bottom: 24px; }
+.intro-title span { color: var(--accent); }
+.intro-desc { font-size: 13px; line-height: 1.8; color: #aaa; margin-bottom: 32px; }
+.ethics-box {
+  border: 1px solid var(--border); background: var(--surface); padding: 16px 20px;
+  border-radius: 4px; font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 32px;
+}
+.ethics-box strong { color: var(--accent3); display: block; margin-bottom: 4px; letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px; }
+.group-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.group-btn {
+  padding: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  cursor: pointer; font-family: 'Space Mono', monospace; font-size: 12px; text-align: left;
+  border-radius: 4px; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.group-btn::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; }
+.group-btn.experimental::before { background: linear-gradient(135deg, rgba(232,255,74,0.08), transparent); }
+.group-btn.control::before { background: linear-gradient(135deg, rgba(74,255,218,0.08), transparent); }
+.group-btn:hover::before, .group-btn.selected::before { opacity: 1; }
+.group-btn.selected.experimental { border-color: var(--accent); }
+.group-btn.selected.control { border-color: var(--accent3); }
+.group-btn .g-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 4px; display: block; }
+.group-btn.experimental .g-label { color: var(--accent); }
+.group-btn.control .g-label { color: var(--accent3); }
+.group-btn .g-desc { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.btn-primary { width: 100%; padding: 16px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+#screen-task { align-items: center; justify-content: center; padding: 40px 32px; }
+.task-wrapper { max-width: 700px; width: 100%; }
+.progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 32px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+.trial-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 48px; }
+.stroop-stage-label { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); text-align: center; margin-bottom: 12px; }
+.stimulus-area { display: flex; justify-content: center; align-items: center; min-height: 200px; margin-bottom: 48px; }
+.fixation { font-size: 48px; color: var(--muted); user-select: none; }
+.sart-stimulus {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(64px, 15vw, 120px);
+  font-weight: 800;
+  user-select: none;
+  animation: stimIn 0.15s ease both;
+}
+@keyframes stimIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+.response-grid { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
+.resp-btn {
+  padding: 16px 32px; border: 2px solid var(--border); background: var(--surface);
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; cursor: pointer;
+  border-radius: 60px; text-transform: uppercase; transition: all 0.15s;
+}
+.resp-btn.go { color: var(--accent3); border-color: var(--accent3); }
+.resp-btn.nogo { color: var(--accent2); border-color: var(--accent2); background: rgba(255,74,110,0.1); }
+.resp-btn:active { transform: scale(0.96); }
+.feedback-flash { position: fixed; inset: 0; pointer-events: none; z-index: 200; opacity: 0; transition: opacity 0.1s; }
+.feedback-flash.correct { background: rgba(74,255,218,0.07); opacity: 1; }
+.feedback-flash.wrong { background: rgba(255,74,110,0.07); opacity: 1; }
+.rt-ticker { position: fixed; top: 80px; right: 32px; font-size: 11px; color: var(--muted); font-family: monospace; }
+#screen-results { padding: 40px 32px; align-items: center; }
+.results-content { max-width: 800px; width: 100%; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 4px; }
+.stat-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
+.stat-value.accent { color: var(--accent); }
+.stat-value.accent2 { color: var(--accent2); }
+.stat-value.accent3 { color: var(--accent3); }
+.chart-section { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 24px; }
+.chart-title { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+canvas { max-height: 260px; width: 100%; }
+.trial-log { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 24px; }
+.trial-log-header { padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+.trial-log-body { max-height: 200px; overflow-y: auto; font-size: 11px; }
+.trial-row { display: grid; grid-template-columns: 40px 60px 80px 60px; padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.03); align-items: center; gap: 8px; }
+.trial-row.header { color: var(--muted); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; background: rgba(255,255,255,0.02); }
+.correct-dot { color: var(--success); }
+.wrong-dot { color: var(--danger); }
+.paper-box { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
+.paper-box h3 { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+.paper-text { font-size: 12px; line-height: 1.9; color: #ccc; white-space: pre-wrap; font-family: 'Space Mono', monospace; }
+.action-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-export { flex: 1; min-width: 140px; padding: 14px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-outline { flex: 1; min-width: 140px; padding: 14px; background: transparent; color: var(--text); border: 1px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.priming-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(12px);
+  z-index: 300; display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+}
+.priming-overlay.active { opacity: 1; visibility: visible; }
+.priming-card { max-width: 500px; background: var(--surface); border: 1px solid var(--accent); padding: 40px 32px; border-radius: 12px; text-align: center; }
+.priming-icon { font-size: 48px; margin-bottom: 20px; }
+.priming-message { font-size: 24px; font-weight: 700; margin-bottom: 16px; color: var(--accent); }
+.priming-sub { font-size: 13px; color: var(--muted); }
+.priming-progress { margin-top: 28px; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.priming-progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.2s linear; }
+@media (max-width: 680px) {
+  .stats-grid { grid-template-columns: 1fr !important; gap: 8px; }
+  .stat-value { font-size: 20px; }
+  .trial-row { grid-template-columns: 30px 50px 60px 50px !important; font-size: 9px; gap: 4px; }
+  .resp-btn { padding: 12px 20px; font-size: 18px; }
+  .rt-ticker { top: auto; bottom: 16px; right: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="feedback-flash" id="feedbackFlash"></div>
+<div id="primingOverlay" class="priming-overlay">
+  <div class="priming-card">
+    <div class="priming-icon">🧠</div>
+    <div class="priming-message" id="primingMsg">Focus attention</div>
+    <div class="priming-sub" id="primingSub">Prepare for SART</div>
+    <div class="priming-progress"><div class="priming-progress-fill" id="primingFill"></div></div>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="screen active" id="screen-intro">
+  <div class="header">
+    <div class="logo">SART · HCI</div>
+    <div class="badge">Sustained Attention</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
+    <div class="intro-content">
+      <div class="intro-tag">// Sustained Attention to Response Task</div>
+      <h1 class="intro-title">Atención<br><span>Sostenida</span><br>e Impulsividad</h1>
+      <p class="intro-desc">Aparecerán números del 1 al 9. Presiona el botón GO solo cuando veas el número <strong style="color:var(--accent3)">3</strong>. NO presiones para ningún otro número. Responde lo más rápido y preciso posible.</p>
+      <div class="ethics-box"><strong>⚖ Declaración ética</strong><span>Sin tracking. Datos locales y en Supabase.</span></div>
+      <div class="ethics-box" style="border-color:#333; display:flex; justify-content:space-between;">
+        <div><strong style="color:var(--accent)">⬡ PARTICIPANT ID</strong><span id="pidDisplay" style="margin-left:12px;"></span></div>
+        <button onclick="regenerateID()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:4px 8px;">↺</button>
+      </div>
+      <div style="margin-bottom:16px; font-size:11px; color:var(--muted);">Selecciona grupo</div>
+      <div class="group-row">
+        <button class="group-btn experimental" onclick="selectGroup('experimental')" id="btn-exp"><span class="g-label">Experimental</span><span class="g-desc">Recibe preparación atencional</span></button>
+        <button class="group-btn control" onclick="selectGroup('control')" id="btn-ctrl"><span class="g-label">Control</span><span class="g-desc">Secuencia directa</span></button>
+      </div>
+      <button class="btn-primary" id="startBtn" disabled onclick="startStudy()">Comenzar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK -->
+<div class="screen" id="screen-task">
+  <div class="header"><div class="logo">SART · HCI</div><div class="badge" id="phaseLabel">Práctica</div></div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:32px 24px;">
+    <div class="task-wrapper">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>
+      <div class="trial-meta"><span id="trialCounter">Ensayo 0 / 0</span><span id="phaseDesc">Warm-up</span></div>
+      <div class="stroop-stage-label" id="stageLabel">¿Es el número 3?</div>
+      <div class="stimulus-area">
+        <div class="fixation" id="fixation">+</div>
+        <div class="sart-stimulus" id="stimulus" style="display:none"></div>
+      </div>
+      <div class="response-grid">
+        <button class="resp-btn go" onclick="respond('go')">GO (3)</button>
+        <button class="resp-btn nogo" onclick="respond('nogo')">NO‑GO (otro)</button>
+      </div>
+    </div>
+  </div>
+  <div class="rt-ticker" id="rtTicker"></div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="screen-results">
+  <div class="header"><div class="logo">SART · HCI</div><div class="badge">Análisis completo</div></div>
+  <div style="padding:40px 32px; display:flex; justify-content:center;">
+    <div class="results-content">
+      <h2 class="results-title">Resultados</h2><p class="results-subtitle" id="resultsMeta"></p>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="chart-section"><div class="chart-title">// Rendimiento</div><canvas id="taskChart" height="200"></canvas></div>
+      <div class="trial-log"><div class="trial-log-header">// Registro de ensayos (fase principal)</div><div class="trial-log-body"><div class="trial-row header"><span>#</span><span>Estímulo</span><span>Respuesta</span><span>RT(ms)</span><span>Correcto</span></div><div id="trialLog"></div></div></div>
+      <div class="paper-box"><h3>// Informe (estilo APA)</h3><div class="paper-text" id="paperText"></div></div>
+      <div class="action-row">
+        <button class="btn-export" onclick="exportCSV()">↓ Exportar CSV</button>
+        <button class="btn-export" style="background:var(--accent3);color:#000;" onclick="exportJSON()">↓ Exportar JSON</button>
+        <button class="btn-outline" onclick="resetStudy()">↺ Nueva sesión</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  SUPABASE CONFIG
+// ============================================================
+const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function sendTrial(trial) {
+  try {
+    await supabaseClient.from('sart_trials').insert({
+      participant_id: participantId,
+      cohort: group,
+      trial: trial.trialIndex,
+      stimulus: trial.stimulus,
+      is_target: trial.isTarget,
+      response: trial.response,
+      rt_ms: trial.rt,
+      correct: trial.correct,
+      isi_jitter_ms: trial.jitter,
+      viewport: trial.viewport,
+      device_type: trial.deviceType,
+      timestamp: trial.timestamp
+    });
+  } catch(e) { console.warn(e); }
+}
+
+// ============================================================
+//  CONSTANTES
+// ============================================================
+const PRACTICE_TRIALS = 12;
+const MAIN_TRIALS = 120;      // estándar SART largo
+const TARGET_NUMBER = 3;
+const GO_PROPORTION = 0.11;    // ~11% de objetivos (típico en SART)
+let participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
+let group = null;
+let trials = [];
+let currentIdx = 0;
+let stimStart = 0;
+let waiting = false;
+let fixationTimer = null;
+
+// ============================================================
+//  GENERACIÓN DE ENSAYOS
+// ============================================================
+function makeTrial(phase) {
+  let isTarget = false;
+  let stimulus;
+  if (phase === 'practice') {
+    // Práctica: mitad objetivos, mitad no objetivos
+    isTarget = Math.random() < 0.5;
+    stimulus = isTarget ? TARGET_NUMBER : Math.floor(Math.random() * 9) + 1;
+    while (!isTarget && stimulus === TARGET_NUMBER) stimulus = Math.floor(Math.random() * 9) + 1;
+  } else {
+    // Principal: probabilidad ~11% de objetivo
+    isTarget = Math.random() < GO_PROPORTION;
+    if (isTarget) {
+      stimulus = TARGET_NUMBER;
+    } else {
+      stimulus = Math.floor(Math.random() * 9) + 1;
+      while (stimulus === TARGET_NUMBER) stimulus = Math.floor(Math.random() * 9) + 1;
+    }
+  }
+  return {
+    stimulus: stimulus.toString(),
+    isTarget: isTarget,
+    phase: phase,
+    rt: null,
+    correct: null,
+    response: null,
+    jitter: null,
+    viewport: null,
+    deviceType: null,
+    timestamp: null,
+    trialIndex: null
+  };
+}
+
+function buildTrials() {
+  let list = [];
+  for (let i = 0; i < PRACTICE_TRIALS; i++) list.push(makeTrial('practice'));
+  for (let i = 0; i < MAIN_TRIALS; i++) list.push(makeTrial('main'));
+  // Mezclar
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
+}
+
+// ============================================================
+//  FLUJO DE LA TAREA
+// ============================================================
+function startCoreTask() {
+  trials = buildTrials();
+  currentIdx = 0;
+  showScreen('screen-task');
+  nextTrial();
+}
+
+function nextTrial() {
+  if (currentIdx >= trials.length) { finishTask(); return; }
+  const trial = trials[currentIdx];
+  const total = trials.length;
+  document.getElementById('progressBar').style.width = (currentIdx / total * 100) + '%';
+  document.getElementById('trialCounter').innerHTML = `Ensayo ${currentIdx+1} / ${total}`;
+  const isPractice = trial.phase === 'practice';
+  document.getElementById('phaseLabel').innerText = isPractice ? 'Práctica' : 'Fase principal';
+  document.getElementById('phaseDesc').innerHTML = trial.isTarget ? 'OBJETIVO (3)' : 'No objetivo';
+
+  setResponseState(false);
+  waiting = false;
+  document.getElementById('fixation').style.display = 'block';
+  document.getElementById('stimulus').style.display = 'none';
+
+  const jitter = Math.round(Math.random() * 400 + 400);
+  if (trial.phase === 'main') trial.jitter = jitter;
+  if (fixationTimer) clearTimeout(fixationTimer);
+  fixationTimer = setTimeout(() => {
+    document.getElementById('fixation').style.display = 'none';
+    const el = document.getElementById('stimulus');
+    el.textContent = trial.stimulus;
+    el.style.display = 'block';
+    stimStart = performance.now();
+    setResponseState(true);
+    waiting = true;
+  }, jitter);
+}
+
+function setResponseState(active) {
+  document.querySelectorAll('.resp-btn').forEach(btn => btn.disabled = !active);
+  waiting = active;
+}
+
+function respond(response) {
+  if (!waiting) return;
+  let rt = Math.round(performance.now() - stimStart);
+  const trial = trials[currentIdx];
+  // Para SART: correcto = (target y respuesta 'go') o (no target y respuesta 'nogo')
+  const correct = (trial.isTarget && response === 'go') || (!trial.isTarget && response === 'nogo');
+
+  const flash = document.getElementById('feedbackFlash');
+  flash.className = 'feedback-flash ' + (correct ? 'correct' : 'wrong');
+  setTimeout(() => flash.className = 'feedback-flash', 200);
+
+  // Validación RT solo para respuestas GO (aunque también podemos registrar RT en errores)
+  if (response === 'go' && (rt < 200 || rt > 2000)) {
+    document.getElementById('rtTicker').innerHTML = `⚠️ Respuesta demasiado rápida/lenta (${rt} ms) — repite`;
+    setTimeout(() => {
+      waiting = false;
+      setResponseState(false);
+      document.getElementById('fixation').style.display = 'none';
+      const el = document.getElementById('stimulus');
+      el.textContent = trial.stimulus;
+      el.style.display = 'block';
+      stimStart = performance.now();
+      setResponseState(true);
+      waiting = true;
+    }, 800);
+    return;
+  }
+
+  document.getElementById('rtTicker').innerHTML = (response === 'go' ? rt + ' ms' : '✓ inhibición');
+
+  if (trial.phase === 'main') {
+    trial.rt = (response === 'go') ? rt : null;
+    trial.correct = correct;
+    trial.response = response;
+    trial.timestamp = new Date().toISOString();
+    trial.viewport = `${window.innerWidth}x${window.innerHeight}`;
+    trial.deviceType = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
+    trial.trialIndex = currentIdx + 1;
+    try { localStorage.setItem('sart_session', JSON.stringify({ participantId, group, trials })); } catch(e) {}
+    sendTrial(trial);
+  }
+  currentIdx++;
+  setTimeout(() => nextTrial(), 280);
+}
+
+function finishTask() { buildResults(); showScreen('screen-results'); }
+
+// ============================================================
+//  PRIMING (opcional)
+// ============================================================
+function runPriming() {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('primingOverlay');
+    const msgDiv = document.getElementById('primingMsg');
+    const subDiv = document.getElementById('primingSub');
+    const fillDiv = document.getElementById('primingFill');
+    const steps = [
+      { msg: "🧠 FOCUS ATTENTION", sub: "Prepare sustained attention" },
+      { msg: "⚡ PRESS ONLY FOR 3", sub: "Ignore all other numbers" },
+      { msg: "🎯 READY", sub: "SART begins" }
+    ];
+    overlay.classList.add('active');
+    let stepIdx = 0;
+    function showStep() {
+      if (stepIdx >= steps.length) { overlay.classList.remove('active'); resolve(); return; }
+      msgDiv.innerText = steps[stepIdx].msg;
+      subDiv.innerText = steps[stepIdx].sub;
+      fillDiv.style.width = '0%';
+      let startTime = Date.now();
+      const duration = 1500;
+      const interval = setInterval(() => {
+        let elapsed = Date.now() - startTime;
+        let percent = Math.min(100, (elapsed / duration) * 100);
+        fillDiv.style.width = percent + '%';
+        if (elapsed >= duration) { clearInterval(interval); stepIdx++; showStep(); }
+      }, 20);
+    }
+    showStep();
+  });
+}
+
+async function startStudy() { if (!group) return; if (group === 'experimental') { await runPriming(); startCoreTask(); } else { startCoreTask(); } }
+
+// ============================================================
+//  ESTADÍSTICAS Y RESULTADOS
+// ============================================================
+function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+function std(arr) { if(arr.length<2) return 0; let m=mean(arr); return Math.sqrt(arr.reduce((s,x)=>s+(x-m)**2,0)/(arr.length-1)); }
+
+function buildResults() {
+  const mainTrials = trials.filter(t => t.phase === 'main' && t.rt !== undefined);
+  const targetTrials = mainTrials.filter(t => t.isTarget);
+  const nontargetTrials = mainTrials.filter(t => !t.isTarget);
+
+  const hits = targetTrials.filter(t => t.correct && t.response === 'go').length;
+  const misses = targetTrials.filter(t => !t.correct).length;
+  const correctRejections = nontargetTrials.filter(t => t.correct && t.response === 'nogo').length;
+  const falseAlarms = nontargetTrials.filter(t => !t.correct).length;
+
+  const hitRate = hits / (targetTrials.length || 1);
+  const faRate = falseAlarms / (nontargetTrials.length || 1);
+  const dPrime = (Math.log((hitRate+0.01)/(1.01-hitRate)) - Math.log((faRate+0.01)/(1.01-faRate))) / 1.414;
+
+  const rtHits = targetTrials.filter(t => t.correct && t.rt >= 200 && t.rt <= 2000).map(t=>t.rt);
+  const meanRt = mean(rtHits);
+  const totalAcc = (mainTrials.filter(t=>t.correct).length / mainTrials.length * 100).toFixed(1);
+
+  document.getElementById('resultsMeta').innerHTML = `Grupo: ${group} · Aciertos: ${hits}/${targetTrials.length} · FA: ${falseAlarms}/${nontargetTrials.length} · ${new Date().toLocaleDateString()}`;
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">d' (sensibilidad)</div><div class="stat-value accent">${dPrime.toFixed(3)}</div></div>
+    <div class="stat-card"><div class="stat-label">Aciertos (hits)</div><div class="stat-value accent3">${hits} / ${targetTrials.length}</div><div class="stat-sub">${(hitRate*100).toFixed(1)}%</div></div>
+    <div class="stat-card"><div class="stat-label">Falsas alarmas</div><div class="stat-value accent2">${falseAlarms} / ${nontargetTrials.length}</div><div class="stat-sub">${(faRate*100).toFixed(1)}%</div></div>
+    <div class="stat-card"><div class="stat-label">RT medio (hits)</div><div class="stat-value">${Math.round(meanRt)} ms</div></div>
+    <div class="stat-card"><div class="stat-label">Precisión global</div><div class="stat-value">${totalAcc}%</div></div>`;
+
+  // Gráfico: comparación hits vs FA
+  const ctx = document.getElementById('taskChart').getContext('2d');
+  if (window.sartChart) window.sartChart.destroy();
+  window.sartChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Aciertos (%)', 'Falsas alarmas (%)'],
+      datasets: [{
+        label: 'Porcentaje',
+        data: [(hitRate*100).toFixed(1), (faRate*100).toFixed(1)],
+        backgroundColor: ['#4affda', '#ff4a6e'],
+        borderRadius: 4
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#fff' } } } }
+  });
+
+  // Tabla de ensayos
+  const logDiv = document.getElementById('trialLog');
+  logDiv.innerHTML = '';
+  mainTrials.forEach((t,i) => {
+    const row = document.createElement('div'); row.className='trial-row';
+    row.innerHTML = `<span>${i+1}</span><span>${t.stimulus}</span><span style="color:${t.correct?'var(--success)':'var(--danger)'}">${t.response||'—'}</span><span>${t.rt||'—'}</span><span class="${t.correct?'correct-dot':'wrong-dot'}">${t.correct?'✓':'✗'}</span>`;
+    logDiv.appendChild(row);
+  });
+
+  document.getElementById('paperText').innerHTML = `SART (Sustained Attention to Response Task) – Resultados\nGrupo: ${group}\nSensibilidad d' = ${dPrime.toFixed(3)}\nAciertos: ${hits} (${(hitRate*100).toFixed(1)}%), Falsas alarmas: ${falseAlarms} (${(faRate*100).toFixed(1)}%)\nTiempo de reacción medio en aciertos: ${Math.round(meanRt)} ms\nPrecisión global: ${totalAcc}%`;
+}
+
+// ============================================================
+//  EXPORTACIONES
+// ============================================================
+function exportCSV() {
+  const main = trials.filter(t=>t.phase==='main');
+  let csv = "participant_id,group,date,trial,stimulus,is_target,response,rt_ms,correct,isi_jitter_ms,viewport,device_type,timestamp\n";
+  main.forEach((t,i)=>csv+=`${participantId},${group},${new Date().toISOString().slice(0,10)},${i+1},${t.stimulus},${t.isTarget?1:0},${t.response||'NA'},${t.rt||''},${t.correct?1:0},${t.jitter||''},${t.viewport||''},${t.deviceType||''},${t.timestamp||''}\n`);
+  const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`sart_${participantId}.csv`; a.click();
+}
+function exportJSON() {
+  const main = trials.filter(t=>t.phase==='main');
+  const payload = { meta: { participantId, group, exportedAt: new Date().toISOString() }, trials: main };
+  const blob=new Blob([JSON.stringify(payload, null, 2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`sart_${participantId}.json`; a.click();
+}
+function resetStudy() { try { localStorage.removeItem('sart_session'); } catch(e) {} location.reload(); }
+
+// ============================================================
+//  SESSION RESTORE
+// ============================================================
+function checkSavedSession() {
+  try {
+    const saved = localStorage.getItem('sart_session');
+    if (!saved) return;
+    const data = JSON.parse(saved);
+    const done = (data.trials||[]).filter(t=>t.phase==='main' && t.rt!==undefined).length;
+    if (done < 3) { localStorage.removeItem('sart_session'); return; }
+    if (confirm('Sesión no guardada encontrada. ¿Reanudar?')) {
+      participantId = data.participantId; group = data.group; trials = data.trials;
+      document.getElementById('pidDisplay').innerText = participantId;
+      buildResults(); showScreen('screen-results');
+    } else localStorage.removeItem('sart_session');
+  } catch(e) {}
+}
+
+function regenerateID() { participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase(); document.getElementById('pidDisplay').innerText = participantId; }
+function selectGroup(g) { group = g; document.getElementById('btn-exp').classList.toggle('selected', g==='experimental'); document.getElementById('btn-ctrl').classList.toggle('selected', g==='control'); document.getElementById('startBtn').disabled = false; }
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+document.getElementById('pidDisplay').innerText = participantId;
+checkSavedSession();
+</script>
+</body>
+</html>

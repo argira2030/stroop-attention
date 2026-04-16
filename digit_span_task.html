@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Digit Span · Working Memory</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ===== MISMOS ESTILOS QUE LAS TAREAS ANTERIORES ===== */
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --muted: #666;
+  --accent: #e8ff4a;
+  --accent2: #ff4a6e;
+  --accent3: #4affda;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Space Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(232,255,74,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,255,74,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; }
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 32px; border-bottom: 1px solid var(--border);
+  background: rgba(10,10,10,0.8); backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+.badge { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; border: 1px solid var(--border); padding: 4px 10px; border-radius: 2px; }
+#screen-intro { justify-content: center; align-items: center; padding: 40px 32px; }
+.intro-content { max-width: 600px; width: 100%; animation: fadeUp 0.6s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.intro-tag { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+.intro-title { font-family: 'Syne', sans-serif; font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.05; margin-bottom: 24px; }
+.intro-title span { color: var(--accent); }
+.intro-desc { font-size: 13px; line-height: 1.8; color: #aaa; margin-bottom: 32px; }
+.ethics-box {
+  border: 1px solid var(--border); background: var(--surface); padding: 16px 20px;
+  border-radius: 4px; font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 32px;
+}
+.ethics-box strong { color: var(--accent3); display: block; margin-bottom: 4px; letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px; }
+.group-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.group-btn {
+  padding: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  cursor: pointer; font-family: 'Space Mono', monospace; font-size: 12px; text-align: left;
+  border-radius: 4px; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.group-btn::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; }
+.group-btn.experimental::before { background: linear-gradient(135deg, rgba(232,255,74,0.08), transparent); }
+.group-btn.control::before { background: linear-gradient(135deg, rgba(74,255,218,0.08), transparent); }
+.group-btn:hover::before, .group-btn.selected::before { opacity: 1; }
+.group-btn.selected.experimental { border-color: var(--accent); }
+.group-btn.selected.control { border-color: var(--accent3); }
+.group-btn .g-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 4px; display: block; }
+.group-btn.experimental .g-label { color: var(--accent); }
+.group-btn.control .g-label { color: var(--accent3); }
+.group-btn .g-desc { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.btn-primary { width: 100%; padding: 16px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+#screen-task { align-items: center; justify-content: center; padding: 40px 32px; }
+.task-wrapper { max-width: 700px; width: 100%; }
+.progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 32px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+.trial-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 48px; }
+.stroop-stage-label { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); text-align: center; margin-bottom: 12px; }
+.stimulus-area {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 40px;
+  margin-bottom: 40px;
+  text-align: center;
+  min-height: 160px;
+}
+.digit-sequence {
+  font-size: 36px;
+  font-family: 'Syne', sans-serif;
+  letter-spacing: 12px;
+  word-break: break-word;
+  color: var(--accent);
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+.response-area {
+  margin-top: 20px;
+}
+.resp-input {
+  width: 100%;
+  padding: 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 18px;
+  text-align: center;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+.resp-input:focus { outline: none; border-color: var(--accent); }
+.btn-next {
+  padding: 12px 24px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 40px;
+  width: 100%;
+}
+.feedback-flash { position: fixed; inset: 0; pointer-events: none; z-index: 200; opacity: 0; transition: opacity 0.1s; }
+.feedback-flash.correct { background: rgba(74,255,218,0.07); opacity: 1; }
+.feedback-flash.wrong { background: rgba(255,74,110,0.07); opacity: 1; }
+.rt-ticker { position: fixed; top: 80px; right: 32px; font-size: 11px; color: var(--muted); font-family: monospace; }
+#screen-results { padding: 40px 32px; align-items: center; }
+.results-content { max-width: 800px; width: 100%; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 4px; }
+.stat-label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
+.stat-value.accent { color: var(--accent); }
+.stat-value.accent2 { color: var(--accent2); }
+.stat-value.accent3 { color: var(--accent3); }
+.chart-section { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 24px; }
+.chart-title { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+canvas { max-height: 260px; width: 100%; }
+.trial-log { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 24px; }
+.trial-log-header { padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+.trial-log-body { max-height: 200px; overflow-y: auto; font-size: 11px; }
+.trial-row { display: grid; grid-template-columns: 40px 100px 80px 60px; padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.03); align-items: center; gap: 8px; }
+.trial-row.header { color: var(--muted); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; background: rgba(255,255,255,0.02); }
+.correct-dot { color: var(--success); }
+.wrong-dot { color: var(--danger); }
+.paper-box { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
+.paper-box h3 { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+.paper-text { font-size: 12px; line-height: 1.9; color: #ccc; white-space: pre-wrap; font-family: 'Space Mono', monospace; }
+.action-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-export { flex: 1; min-width: 140px; padding: 14px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-outline { flex: 1; min-width: 140px; padding: 14px; background: transparent; color: var(--text); border: 1px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.priming-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(12px);
+  z-index: 300; display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+}
+.priming-overlay.active { opacity: 1; visibility: visible; }
+.priming-card { max-width: 500px; background: var(--surface); border: 1px solid var(--accent); padding: 40px 32px; border-radius: 12px; text-align: center; }
+.priming-icon { font-size: 48px; margin-bottom: 20px; }
+.priming-message { font-size: 24px; font-weight: 700; margin-bottom: 16px; color: var(--accent); }
+.priming-sub { font-size: 13px; color: var(--muted); }
+.priming-progress { margin-top: 28px; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.priming-progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.2s linear; }
+@media (max-width: 680px) {
+  .stats-grid { grid-template-columns: 1fr; gap: 8px; }
+  .stat-value { font-size: 20px; }
+  .trial-row { grid-template-columns: 30px 70px 60px 50px; font-size: 9px; gap: 4px; }
+  .rt-ticker { top: auto; bottom: 16px; right: 16px; }
+  .digit-sequence { font-size: 28px; letter-spacing: 6px; }
+}
+</style>
+</head>
+<body>
+
+<div class="feedback-flash" id="feedbackFlash"></div>
+<div id="primingOverlay" class="priming-overlay">
+  <div class="priming-card">
+    <div class="priming-icon">🧠</div>
+    <div class="priming-message" id="primingMsg">Focus attention</div>
+    <div class="priming-sub" id="primingSub">Prepare for Digit Span</div>
+    <div class="priming-progress"><div class="priming-progress-fill" id="primingFill"></div></div>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="screen active" id="screen-intro">
+  <div class="header">
+    <div class="logo">DIGIT SPAN · HCI</div>
+    <div class="badge">Working Memory</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
+    <div class="intro-content">
+      <div class="intro-tag">// WAIS Digit Span (forward + backward)</div>
+      <h1 class="intro-title">Memoria de<br><span>Trabajo</span><br>Verbal</h1>
+      <p class="intro-desc">Se te mostrará una secuencia de dígitos. En la primera parte (forward), repite los dígitos en el mismo orden. En la segunda parte (backward), repite los dígitos en orden inverso. La longitud de la secuencia aumenta después de dos aciertos consecutivos.</p>
+      <div class="ethics-box"><strong>⚖ Declaración ética</strong><span>Sin tracking. Datos locales y en Supabase.</span></div>
+      <div class="ethics-box" style="border-color:#333; display:flex; justify-content:space-between;">
+        <div><strong style="color:var(--accent)">⬡ PARTICIPANT ID</strong><span id="pidDisplay" style="margin-left:12px;"></span></div>
+        <button onclick="regenerateID()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:4px 8px;">↺</button>
+      </div>
+      <div style="margin-bottom:16px; font-size:11px; color:var(--muted);">Selecciona grupo</div>
+      <div class="group-row">
+        <button class="group-btn experimental" onclick="selectGroup('experimental')" id="btn-exp"><span class="g-label">Experimental</span><span class="g-desc">Recibe preparación atencional</span></button>
+        <button class="group-btn control" onclick="selectGroup('control')" id="btn-ctrl"><span class="g-label">Control</span><span class="g-desc">Secuencia directa</span></button>
+      </div>
+      <button class="btn-primary" id="startBtn" disabled onclick="startStudy()">Comenzar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK -->
+<div class="screen" id="screen-task">
+  <div class="header">
+    <div class="logo">DIGIT SPAN · HCI</div>
+    <div class="badge" id="phaseLabel">Práctica</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:32px 24px;">
+    <div class="task-wrapper">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>
+      <div class="trial-meta">
+        <span id="trialCounter">Ensayo 0</span>
+        <span id="phaseDesc">Forward · Longitud 2</span>
+      </div>
+      <div class="stimulus-area">
+        <div id="digitDisplay" class="digit-sequence"></div>
+      </div>
+      <div class="response-area">
+        <input type="text" id="userResponse" class="resp-input" placeholder="Escribe los dígitos (ej. 3 5 1)" autocomplete="off">
+        <button class="btn-next" id="submitBtn" onclick="submitResponse()">COMPROBAR →</button>
+      </div>
+    </div>
+  </div>
+  <div class="rt-ticker" id="rtTicker"></div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="screen-results">
+  <div class="header"><div class="logo">DIGIT SPAN · HCI</div><div class="badge">Análisis completo</div></div>
+  <div style="padding:40px 32px; display:flex; justify-content:center;">
+    <div class="results-content">
+      <h2 class="results-title">Resultados</h2><p class="results-subtitle" id="resultsMeta"></p>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="chart-section"><div class="chart-title">// Span forward y backward</div><canvas id="taskChart" height="200"></canvas></div>
+      <div class="trial-log"><div class="trial-log-header">// Registro de ensayos</div><div class="trial-log-body"><div class="trial-row header"><span>#</span><span>Modo</span><span>Longitud</span><span>Correcto</span></div><div id="trialLog"></div></div></div>
+      <div class="paper-box"><h3>// Informe (estilo APA)</h3><div class="paper-text" id="paperText"></div></div>
+      <div class="action-row">
+        <button class="btn-export" onclick="exportCSV()">↓ Exportar CSV</button>
+        <button class="btn-export" style="background:var(--accent3);color:#000;" onclick="exportJSON()">↓ Exportar JSON</button>
+        <button class="btn-outline" onclick="resetStudy()">↺ Nueva sesión</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  SUPABASE CONFIG
+// ============================================================
+const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function sendTrial(trial) {
+  try {
+    await supabaseClient.from('digit_span_trials').insert(trial);
+  } catch(e) { console.warn(e); }
+}
+
+// ============================================================
+//  CONSTANTES Y ESTADO
+// ============================================================
+let participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
+let group = null;
+
+let trials = [];           // cada ensayo: {phase, mode, length, sequence, response, correct, rt}
+let currentMode = 'forward'; // 'forward' o 'backward'
+let currentLength = 2;
+let correctStreak = 0;
+let maxSpanForward = 0;
+let maxSpanBackward = 0;
+let totalTrials = 0;
+let phase = 'practice';     // 'practice' o 'main'
+let practiceTrials = 0;
+let currentSequence = [];
+let trialStartTime = 0;
+
+const MAX_LENGTH = 9;
+const PRACTICE_TRIALS_PER_MODE = 2;
+
+// ============================================================
+//  GENERAR SECUENCIA ALEATORIA DE DÍGITOS (1-9)
+// ============================================================
+function generateSequence(length) {
+  let seq = [];
+  for (let i = 0; i < length; i++) {
+    seq.push(Math.floor(Math.random() * 9) + 1);
+  }
+  return seq;
+}
+
+// ============================================================
+//  MOSTRAR SECUENCIA (un dígito cada 800ms)
+// ============================================================
+async function presentSequence(seq, mode) {
+  const display = document.getElementById('digitDisplay');
+  const submitBtn = document.getElementById('submitBtn');
+  const inputField = document.getElementById('userResponse');
+  submitBtn.disabled = true;
+  inputField.disabled = true;
+  display.innerHTML = '';
+  for (let digit of seq) {
+    display.innerHTML = digit;
+    await new Promise(r => setTimeout(r, 800));
+    display.innerHTML = '';
+    await new Promise(r => setTimeout(r, 200));
+  }
+  display.innerHTML = '?';
+  // Permitir respuesta
+  submitBtn.disabled = false;
+  inputField.disabled = false;
+  inputField.value = '';
+  inputField.focus();
+  trialStartTime = performance.now();
+}
+
+// ============================================================
+//  PROCESAR RESPUESTA DEL PARTICIPANTE
+// ============================================================
+function submitResponse() {
+  const input = document.getElementById('userResponse').value.trim();
+  if (input === '') return;
+  const rt = Math.round(performance.now() - trialStartTime);
+  document.getElementById('rtTicker').innerHTML = rt + ' ms';
+
+  // Parsear respuesta: separar por espacios o comas
+  let responseDigits = input.split(/[\s,]+/).map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+  let expected = [...currentSequence];
+  if (currentMode === 'backward') {
+    expected = [...currentSequence].reverse();
+  }
+  const correct = responseDigits.length === expected.length &&
+                  responseDigits.every((val, i) => val === expected[i]);
+
+  // Feedback visual
+  const flash = document.getElementById('feedbackFlash');
+  flash.className = 'feedback-flash ' + (correct ? 'correct' : 'wrong');
+  setTimeout(() => flash.className = 'feedback-flash', 200);
+
+  // Registrar ensayo
+  const trialRecord = {
+    participant_id: participantId,
+    cohort: group,
+    phase: phase,
+    mode: currentMode,
+    sequence_length: currentLength,
+    stimulus_sequence: JSON.stringify(currentSequence),
+    response: input,
+    correct: correct,
+    rt_ms: rt,
+    timestamp: new Date().toISOString()
+  };
+  trials.push(trialRecord);
+  if (phase === 'main') sendTrial(trialRecord);
+  totalTrials++;
+
+  // Actualizar span máximo
+  if (correct) {
+    correctStreak++;
+    if (correctStreak >= 2) {
+      // aumentar longitud
+      currentLength++;
+      correctStreak = 0;
+      if (currentMode === 'forward' && currentLength > maxSpanForward) maxSpanForward = currentLength;
+      if (currentMode === 'backward' && currentLength > maxSpanBackward) maxSpanBackward = currentLength;
+      if (currentLength > MAX_LENGTH) currentLength = MAX_LENGTH; // límite
+    }
+  } else {
+    correctStreak = 0;
+    if (currentLength > 2) currentLength--;
+  }
+
+  // Decidir siguiente paso
+  if (phase === 'practice') {
+    practiceTrials++;
+    if (practiceTrials >= PRACTICE_TRIALS_PER_MODE) {
+      // cambiar de modo o terminar práctica
+      if (currentMode === 'forward') {
+        currentMode = 'backward';
+        currentLength = 2;
+        correctStreak = 0;
+        practiceTrials = 0;
+        document.getElementById('phaseDesc').innerHTML = 'Backward · Longitud 2';
+      } else {
+        // fin de práctica, pasar a fase principal
+        phase = 'main';
+        currentMode = 'forward';
+        currentLength = 2;
+        correctStreak = 0;
+        practiceTrials = 0;
+        document.getElementById('phaseLabel').innerText = 'Fase principal';
+        document.getElementById('phaseDesc').innerHTML = 'Forward · Longitud 2';
+      }
+    } else {
+      // mismo modo, nueva secuencia de misma longitud
+      // (no cambiar longitud en práctica)
+    }
+  } else {
+    // fase principal: si ya se completaron ambos modos? Se alternan? Normalmente se hacen primero todos los forward hasta fallo, luego backward.
+    // Implementación simple: forward hasta que falle 2 veces consecutivas? En realidad, el test termina cuando se fallan dos veces en la misma longitud.
+    // Pero para simplificar, haremos una única pasada: forward hasta que currentLength vuelva a 2 tras fallos, luego pasar a backward.
+    // Al finalizar backward, terminar.
+    // Criterio de parada: si currentLength === 2 y se falla, pasar al siguiente modo o terminar.
+    if (currentMode === 'forward' && currentLength === 2 && !correct && correctStreak === 0) {
+      // cambiar a backward
+      currentMode = 'backward';
+      currentLength = 2;
+      correctStreak = 0;
+      document.getElementById('phaseDesc').innerHTML = 'Backward · Longitud 2';
+    } else if (currentMode === 'backward' && currentLength === 2 && !correct && correctStreak === 0) {
+      // terminar tarea
+      finishTask();
+      return;
+    }
+  }
+
+  // Actualizar UI
+  document.getElementById('trialCounter').innerHTML = `Ensayo ${totalTrials+1}`;
+  document.getElementById('phaseDesc').innerHTML = `${currentMode === 'forward' ? 'Forward' : 'Backward'} · Longitud ${currentLength}`;
+
+  // Generar nueva secuencia y presentar
+  currentSequence = generateSequence(currentLength);
+  presentSequence(currentSequence, currentMode);
+}
+
+// ============================================================
+//  INICIAR TAREA (después de priming)
+// ============================================================
+function startCoreTask() {
+  phase = 'practice';
+  currentMode = 'forward';
+  currentLength = 2;
+  correctStreak = 0;
+  practiceTrials = 0;
+  totalTrials = 0;
+  maxSpanForward = 0;
+  maxSpanBackward = 0;
+  trials = [];
+  document.getElementById('phaseLabel').innerText = 'Práctica';
+  document.getElementById('phaseDesc').innerHTML = 'Forward · Longitud 2';
+  document.getElementById('trialCounter').innerHTML = 'Ensayo 0';
+  document.getElementById('userResponse').value = '';
+  showScreen('screen-task');
+  currentSequence = generateSequence(currentLength);
+  presentSequence(currentSequence, currentMode);
+}
+
+// ============================================================
+//  PRIMING (opcional)
+// ============================================================
+function runPriming() {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('primingOverlay');
+    const msgDiv = document.getElementById('primingMsg');
+    const subDiv = document.getElementById('primingSub');
+    const fillDiv = document.getElementById('primingFill');
+    const steps = [
+      { msg: "🧠 FOCUS ATTENTION", sub: "Prepare working memory" },
+      { msg: "🔢 REPEAT THE DIGITS", sub: "Forward order, then backward" },
+      { msg: "🎯 READY", sub: "Digit Span begins" }
+    ];
+    overlay.classList.add('active');
+    let stepIdx = 0;
+    function showStep() {
+      if (stepIdx >= steps.length) { overlay.classList.remove('active'); resolve(); return; }
+      msgDiv.innerText = steps[stepIdx].msg;
+      subDiv.innerText = steps[stepIdx].sub;
+      fillDiv.style.width = '0%';
+      let startTime = Date.now();
+      const duration = 1500;
+      const interval = setInterval(() => {
+        let elapsed = Date.now() - startTime;
+        let percent = Math.min(100, (elapsed / duration) * 100);
+        fillDiv.style.width = percent + '%';
+        if (elapsed >= duration) { clearInterval(interval); stepIdx++; showStep(); }
+      }, 20);
+    }
+    showStep();
+  });
+}
+
+async function startStudy() { if (!group) return; if (group === 'experimental') { await runPriming(); startCoreTask(); } else { startCoreTask(); } }
+
+// ============================================================
+//  FINALIZAR Y MOSTRAR RESULTADOS
+// ============================================================
+function finishTask() {
+  const mainTrials = trials.filter(t => t.phase === 'main');
+  const forwardTrials = mainTrials.filter(t => t.mode === 'forward');
+  const backwardTrials = mainTrials.filter(t => t.mode === 'backward');
+  const forwardCorrect = forwardTrials.filter(t => t.correct).length;
+  const backwardCorrect = backwardTrials.filter(t => t.correct).length;
+  const forwardAcc = forwardTrials.length ? (forwardCorrect / forwardTrials.length * 100).toFixed(1) : 0;
+  const backwardAcc = backwardTrials.length ? (backwardCorrect / backwardTrials.length * 100).toFixed(1) : 0;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Span Forward</div><div class="stat-value accent">${maxSpanForward}</div></div>
+    <div class="stat-card"><div class="stat-label">Span Backward</div><div class="stat-value accent2">${maxSpanBackward}</div></div>
+    <div class="stat-card"><div class="stat-label">Precisión Forward</div><div class="stat-value accent3">${forwardAcc}%</div></div>
+    <div class="stat-card"><div class="stat-label">Precisión Backward</div><div class="stat-value">${backwardAcc}%</div></div>
+  `;
+
+  // Gráfico de spans
+  const ctx = document.getElementById('taskChart').getContext('2d');
+  if (window.dsChart) window.dsChart.destroy();
+  window.dsChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Span Forward', 'Span Backward'],
+      datasets: [{
+        label: 'Longitud máxima',
+        data: [maxSpanForward, maxSpanBackward],
+        backgroundColor: ['#4affda', '#ff4a6e'],
+        borderRadius: 4
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: true }
+  });
+
+  // Tabla de ensayos
+  const logDiv = document.getElementById('trialLog');
+  logDiv.innerHTML = '';
+  mainTrials.forEach((t,i) => {
+    const row = document.createElement('div'); row.className='trial-row';
+    row.innerHTML = `<span>${i+1}</span><span>${t.mode}</span><span>${t.sequence_length}</span><span class="${t.correct?'correct-dot':'wrong-dot'}">${t.correct?'✓':'✗'}</span>`;
+    logDiv.appendChild(row);
+  });
+
+  document.getElementById('paperText').innerHTML = `Digit Span – Resultados\nGrupo: ${group}\nSpan forward: ${maxSpanForward}\nSpan backward: ${maxSpanBackward}\nPrecisión forward: ${forwardAcc}%\nPrecisión backward: ${backwardAcc}%\nTotal ensayos: ${mainTrials.length}.`;
+  showScreen('screen-results');
+}
+
+// ============================================================
+//  EXPORTACIONES
+// ============================================================
+function exportCSV() {
+  const main = trials.filter(t => t.phase === 'main');
+  if (!main.length) return;
+  const headers = Object.keys(main[0]).join(',');
+  const rows = main.map(row => Object.values(row).map(v => JSON.stringify(v ?? '')).join(',')).join('\n');
+  const blob = new Blob([headers + '\n' + rows], {type: 'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `digit_span_${participantId}.csv`; a.click();
+}
+function exportJSON() {
+  const main = trials.filter(t => t.phase === 'main');
+  const payload = { meta: { participantId, group, exportedAt: new Date().toISOString() }, trials: main };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `digit_span_${participantId}.json`; a.click();
+}
+function resetStudy() { location.reload(); }
+
+// ============================================================
+//  UI HELPERS
+// ============================================================
+function regenerateID() { participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase(); document.getElementById('pidDisplay').innerText = participantId; }
+function selectGroup(g) { group = g; document.getElementById('btn-exp').classList.toggle('selected', g==='experimental'); document.getElementById('btn-ctrl').classList.toggle('selected', g==='control'); document.getElementById('startBtn').disabled = false; }
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+document.getElementById('pidDisplay').innerText = participantId;
+</script>
+</body>
+</html>

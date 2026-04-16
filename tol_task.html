@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Tower of London · Planificación</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #111;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --muted: #666;
+  --accent: #e8ff4a;
+  --accent2: #ff4a6e;
+  --accent3: #4affda;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Space Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(232,255,74,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,255,74,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; }
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 32px; border-bottom: 1px solid var(--border);
+  background: rgba(10,10,10,0.8); backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+.badge { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; border: 1px solid var(--border); padding: 4px 10px; border-radius: 2px; }
+#screen-intro { justify-content: center; align-items: center; padding: 40px 32px; }
+.intro-content { max-width: 600px; width: 100%; animation: fadeUp 0.6s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.intro-tag { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+.intro-title { font-family: 'Syne', sans-serif; font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.05; margin-bottom: 24px; }
+.intro-title span { color: var(--accent); }
+.intro-desc { font-size: 13px; line-height: 1.8; color: #aaa; margin-bottom: 32px; }
+.ethics-box {
+  border: 1px solid var(--border); background: var(--surface); padding: 16px 20px;
+  border-radius: 4px; font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 32px;
+}
+.ethics-box strong { color: var(--accent3); display: block; margin-bottom: 4px; letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px; }
+.group-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.group-btn {
+  padding: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  cursor: pointer; font-family: 'Space Mono', monospace; font-size: 12px; text-align: left;
+  border-radius: 4px; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.group-btn::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; }
+.group-btn.experimental::before { background: linear-gradient(135deg, rgba(232,255,74,0.08), transparent); }
+.group-btn.control::before { background: linear-gradient(135deg, rgba(74,255,218,0.08), transparent); }
+.group-btn:hover::before, .group-btn.selected::before { opacity: 1; }
+.group-btn.selected.experimental { border-color: var(--accent); }
+.group-btn.selected.control { border-color: var(--accent3); }
+.group-btn .g-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 4px; display: block; }
+.group-btn.experimental .g-label { color: var(--accent); }
+.group-btn.control .g-label { color: var(--accent3); }
+.group-btn .g-desc { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.btn-primary { width: 100%; padding: 16px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+#screen-task { align-items: center; justify-content: center; padding: 40px 32px; }
+.task-wrapper { max-width: 900px; width: 100%; }
+.progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 20px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+.trial-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 20px; }
+.tol-board {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+.tower {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  width: 140px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.tower.selected {
+  border-color: var(--accent);
+  background: rgba(232,255,74,0.05);
+}
+.disk {
+  width: 80%;
+  height: 24px;
+  margin: 4px 0;
+  border-radius: 12px;
+  background: var(--accent3);
+}
+.disk.size-1 { width: 40px; background: #4affda; }
+.disk.size-2 { width: 70px; background: #e8ff4a; }
+.disk.size-3 { width: 100px; background: #ff4a6e; }
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 20px 0;
+}
+.ctrl-btn {
+  padding: 10px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  border-radius: 40px;
+}
+.ctrl-btn:hover { border-color: var(--accent); }
+.message-area {
+  text-align: center;
+  font-size: 12px;
+  color: var(--accent);
+  margin-top: 20px;
+}
+#screen-results { padding: 40px 32px; align-items: center; }
+.results-content { max-width: 800px; width: 100%; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 4px; }
+.stat-label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
+.stat-value.accent { color: var(--accent); }
+.stat-value.accent2 { color: var(--accent2); }
+.stat-value.accent3 { color: var(--accent3); }
+.chart-section { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 24px; }
+canvas { max-height: 260px; width: 100%; }
+.trial-log { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 24px; }
+.trial-log-header { padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+.trial-log-body { max-height: 200px; overflow-y: auto; font-size: 11px; }
+.trial-row { display: grid; grid-template-columns: 40px 80px 80px 60px; padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.03); align-items: center; gap: 8px; }
+.paper-box { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
+.paper-text { font-size: 12px; line-height: 1.9; color: #ccc; white-space: pre-wrap; }
+.action-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-export { flex: 1; min-width: 140px; padding: 14px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-outline { flex: 1; min-width: 140px; padding: 14px; background: transparent; color: var(--text); border: 1px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.priming-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(12px); z-index: 300; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s ease; }
+.priming-overlay.active { opacity: 1; visibility: visible; }
+.priming-card { max-width: 500px; background: var(--surface); border: 1px solid var(--accent); padding: 40px 32px; border-radius: 12px; text-align: center; }
+.priming-icon { font-size: 48px; margin-bottom: 20px; }
+.priming-message { font-size: 24px; font-weight: 700; margin-bottom: 16px; color: var(--accent); }
+.priming-sub { font-size: 13px; color: var(--muted); }
+.priming-progress { margin-top: 28px; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.priming-progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.2s linear; }
+@media (max-width: 680px) {
+  .tol-board { gap: 10px; }
+  .tower { width: 90px; }
+  .disk { height: 18px; }
+  .stats-grid { grid-template-columns: 1fr; gap: 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="feedback-flash" id="feedbackFlash"></div>
+<div id="primingOverlay" class="priming-overlay">
+  <div class="priming-card">
+    <div class="priming-icon">🧠</div>
+    <div class="priming-message" id="primingMsg">Focus attention</div>
+    <div class="priming-sub" id="primingSub">Prepare for Tower of London</div>
+    <div class="priming-progress"><div class="priming-progress-fill" id="primingFill"></div></div>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="screen active" id="screen-intro">
+  <div class="header">
+    <div class="logo">TOL · HCI</div>
+    <div class="badge">Planning</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
+    <div class="intro-content">
+      <div class="intro-tag">// Tower of London (Shallice, 1982)</div>
+      <h1 class="intro-title">Planificación<br><span>Ejecutiva</span><br>y Movimientos</h1>
+      <p class="intro-desc">Tienes tres torres y tres discos de diferente tamaño. Debes alcanzar la configuración objetivo moviendo un disco a la vez, nunca poniendo un disco más grande sobre uno más pequeño. Intenta resolver cada problema en el menor número de movimientos posible.</p>
+      <div class="ethics-box"><strong>⚖ Declaración ética</strong><span>Sin tracking. Datos en Supabase.</span></div>
+      <div class="ethics-box" style="border-color:#333; display:flex; justify-content:space-between;">
+        <div><strong style="color:var(--accent)">⬡ PARTICIPANT ID</strong><span id="pidDisplay" style="margin-left:12px;"></span></div>
+        <button onclick="regenerateID()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:4px 8px;">↺</button>
+      </div>
+      <div style="margin-bottom:16px; font-size:11px; color:var(--muted);">Selecciona grupo</div>
+      <div class="group-row">
+        <button class="group-btn experimental" onclick="selectGroup('experimental')" id="btn-exp"><span class="g-label">Experimental</span><span class="g-desc">Recibe preparación</span></button>
+        <button class="group-btn control" onclick="selectGroup('control')" id="btn-ctrl"><span class="g-label">Control</span><span class="g-desc">Secuencia directa</span></button>
+      </div>
+      <button class="btn-primary" id="startBtn" disabled onclick="startStudy()">Comenzar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK -->
+<div class="screen" id="screen-task">
+  <div class="header">
+    <div class="logo">TOL · HCI</div>
+    <div class="badge" id="phaseLabel">Práctica</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:32px 24px;">
+    <div class="task-wrapper">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>
+      <div class="trial-meta">
+        <span id="trialCounter">Problema 0 / 12</span>
+        <span id="phaseDesc">Configura inicial → objetivo</span>
+      </div>
+      <div class="tol-board" id="board">
+        <!-- torres dinámicas -->
+      </div>
+      <div class="controls">
+        <button class="ctrl-btn" id="resetBtn" onclick="resetToInitial()">Reiniciar</button>
+        <button class="ctrl-btn" id="checkBtn" onclick="checkSolution()">Comprobar</button>
+      </div>
+      <div class="message-area" id="message"></div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="screen-results">
+  <div class="header"><div class="logo">TOL · HCI</div><div class="badge">Análisis completo</div></div>
+  <div style="padding:40px 32px; display:flex; justify-content:center;">
+    <div class="results-content">
+      <h2>Resultados</h2><p id="resultsMeta"></p>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="chart-section"><canvas id="taskChart" height="200"></canvas></div>
+      <div class="trial-log"><div class="trial-log-header">// Problemas resueltos</div><div class="trial-log-body"><div class="trial-row header"><span>#</span><span>Mov. mínimos</span><span>Mov. usados</span><span>Exacto</span></div><div id="trialLog"></div></div></div>
+      <div class="paper-box"><h3>// Informe</h3><div class="paper-text" id="paperText"></div></div>
+      <div class="action-row">
+        <button class="btn-export" onclick="exportCSV()">↓ CSV</button>
+        <button class="btn-export" style="background:var(--accent3);color:#000;" onclick="exportJSON()">↓ JSON</button>
+        <button class="btn-outline" onclick="resetStudy()">↺ Nueva sesión</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========================= CONFIGURACIÓN =========================
+const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
+let group = null;
+
+// Estado del juego
+let problems = [];
+let currentProblemIdx = 0;
+let currentState = null;      // torres: [[], [], []]
+let targetState = null;
+let movesMade = 0;
+let selectedTower = null;
+let problemStartTime = 0;
+let trials = [];
+
+// Generar problemas con niveles de dificultad (movimientos mínimos 2, 3, 4, 5)
+const PROBLEMS = [
+  { initial: [[3,2,1], [], []], target: [[3,1], [2], []] },        // 2 movimientos
+  { initial: [[3,2,1], [], []], target: [[3], [2], [1]] },          // 3 movimientos
+  { initial: [[3,2,1], [], []], target: [[3], [1], [2]] },          // 4 movimientos
+  { initial: [[3,2,1], [], []], target: [[], [3,2], [1]] },         // 5 movimientos
+  { initial: [[3,2,1], [], []], target: [[], [3], [2,1]] },         // 5 movimientos
+  { initial: [[3,2,1], [], []], target: [[1], [3,2], []] },         // 5 movimientos
+  { initial: [[3,2,1], [], []], target: [[2], [3,1], []] },         // 5 movimientos
+  { initial: [[3,2,1], [], []], target: [[], [3,1], [2]] },         // 5 movimientos
+  { initial: [[3,2,1], [], []], target: [[], [2,1], [3]] },         // 6 movimientos
+  { initial: [[3,2,1], [], []], target: [[], [3], [2,1]] },         // 5 (repetido)
+  { initial: [[3,2,1], [], []], target: [[3], [], [2,1]] },         // 4 movimientos
+  { initial: [[3,2,1], [], []], target: [[2], [3,1], []] }          // 5
+];
+const TOTAL_PROBLEMS = 12;
+const PRACTICE_PROBLEMS = 2;
+
+// Función para calcular movimientos mínimos (BFS simple)
+function minMoves(initial, target) {
+  const serialize = (towers) => JSON.stringify(towers.map(t => [...t].reverse()));
+  const startKey = serialize(initial);
+  const targetKey = serialize(target);
+  if (startKey === targetKey) return 0;
+  const queue = [{ state: initial, moves: 0 }];
+  const visited = new Set([startKey]);
+  while (queue.length) {
+    const { state, moves } = queue.shift();
+    for (let from = 0; from < 3; from++) {
+      if (state[from].length === 0) continue;
+      const disk = state[from][state[from].length - 1];
+      for (let to = 0; to < 3; to++) {
+        if (from === to) continue;
+        if (state[to].length > 0 && state[to][state[to].length - 1] < disk) continue;
+        const newState = JSON.parse(JSON.stringify(state));
+        newState[from].pop();
+        newState[to].push(disk);
+        const key = serialize(newState);
+        if (key === targetKey) return moves + 1;
+        if (!visited.has(key)) {
+          visited.add(key);
+          queue.push({ state: newState, moves: moves + 1 });
+        }
+      }
+    }
+  }
+  return 99; // no debería ocurrir
+}
+
+function initProblems() {
+  for (let i = 0; i < TOTAL_PROBLEMS; i++) {
+    const p = PROBLEMS[i % PROBLEMS.length];
+    const minM = minMoves(p.initial, p.target);
+    problems.push({
+      id: i+1,
+      initial: JSON.parse(JSON.stringify(p.initial)),
+      target: JSON.parse(JSON.stringify(p.target)),
+      minMoves: minM,
+      solved: false,
+      movesUsed: 0,
+      timeMs: 0
+    });
+  }
+}
+
+function renderTowers(state, target) {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const towerDiv = document.createElement('div');
+    towerDiv.className = `tower ${selectedTower === i ? 'selected' : ''}`;
+    towerDiv.onclick = () => selectTower(i);
+    const disks = [...state[i]].reverse();
+    disks.forEach(disk => {
+      const diskDiv = document.createElement('div');
+      diskDiv.className = `disk size-${disk}`;
+      towerDiv.appendChild(diskDiv);
+    });
+    // Mostrar objetivo debajo (opcional)
+    const targetDiv = document.createElement('div');
+    targetDiv.style.marginTop = '10px';
+    targetDiv.style.fontSize = '10px';
+    targetDiv.style.color = '#666';
+    targetDiv.innerText = `Obj: ${target[i].join(',') || '-'}`;
+    towerDiv.appendChild(targetDiv);
+    board.appendChild(towerDiv);
+  }
+}
+
+function selectTower(idx) {
+  if (selectedTower === null) {
+    // seleccionar origen
+    if (currentState[idx].length > 0) {
+      selectedTower = idx;
+      renderTowers(currentState, targetState);
+    }
+  } else {
+    // mover de selectedTower a idx
+    const from = selectedTower;
+    const to = idx;
+    if (from !== to) {
+      const disk = currentState[from][currentState[from].length - 1];
+      if (currentState[to].length === 0 || currentState[to][currentState[to].length - 1] > disk) {
+        // movimiento válido
+        currentState[from].pop();
+        currentState[to].push(disk);
+        movesMade++;
+        document.getElementById('message').innerHTML = `Movimientos: ${movesMade} (mínimo: ${problems[currentProblemIdx].minMoves})`;
+      } else {
+        document.getElementById('message').innerHTML = '❌ Movimiento inválido: disco más grande sobre más pequeño.';
+        setTimeout(() => document.getElementById('message').innerHTML = '', 1000);
+      }
+    }
+    selectedTower = null;
+    renderTowers(currentState, targetState);
+  }
+}
+
+function resetToInitial() {
+  currentState = JSON.parse(JSON.stringify(problems[currentProblemIdx].initial));
+  movesMade = 0;
+  selectedTower = null;
+  renderTowers(currentState, targetState);
+  document.getElementById('message').innerHTML = `Reiniciado. Movimientos: 0 (mínimo: ${problems[currentProblemIdx].minMoves})`;
+}
+
+function checkSolution() {
+  const solved = JSON.stringify(currentState) === JSON.stringify(targetState);
+  const time = (performance.now() - problemStartTime) / 1000;
+  if (solved) {
+    const record = {
+      participant_id: participantId,
+      cohort: group,
+      problem_id: problems[currentProblemIdx].id,
+      min_moves: problems[currentProblemIdx].minMoves,
+      moves_used: movesMade,
+      exact_solution: (movesMade === problems[currentProblemIdx].minMoves),
+      time_seconds: time,
+      solved: true,
+      phase: (currentProblemIdx < PRACTICE_PROBLEMS ? 'practice' : 'main'),
+      timestamp: new Date().toISOString()
+    };
+    trials.push(record);
+    if (record.phase === 'main') sendTrial(record);
+    problems[currentProblemIdx].solved = true;
+    problems[currentProblemIdx].movesUsed = movesMade;
+    problems[currentProblemIdx].timeMs = time * 1000;
+    currentProblemIdx++;
+    if (currentProblemIdx >= TOTAL_PROBLEMS) {
+      finishTask();
+    } else {
+      loadProblem(currentProblemIdx);
+    }
+  } else {
+    document.getElementById('message').innerHTML = '❌ No es la configuración objetivo. Sigue intentando.';
+    setTimeout(() => document.getElementById('message').innerHTML = `Movimientos: ${movesMade} (mínimo: ${problems[currentProblemIdx].minMoves})`, 1500);
+  }
+}
+
+function loadProblem(idx) {
+  const prob = problems[idx];
+  currentState = JSON.parse(JSON.stringify(prob.initial));
+  targetState = JSON.parse(JSON.stringify(prob.target));
+  movesMade = 0;
+  selectedTower = null;
+  renderTowers(currentState, targetState);
+  document.getElementById('message').innerHTML = `Problema ${idx+1}/${TOTAL_PROBLEMS}. Mínimo: ${prob.minMoves} movimientos.`;
+  document.getElementById('progressBar').style.width = ((idx) / TOTAL_PROBLEMS * 100) + '%';
+  document.getElementById('trialCounter').innerHTML = `Problema ${idx+1} / ${TOTAL_PROBLEMS}`;
+  if (idx < PRACTICE_PROBLEMS) document.getElementById('phaseLabel').innerText = 'Práctica';
+  else document.getElementById('phaseLabel').innerText = 'Fase principal';
+  problemStartTime = performance.now();
+}
+
+function startCoreTask() {
+  initProblems();
+  currentProblemIdx = 0;
+  trials = [];
+  loadProblem(0);
+  showScreen('screen-task');
+}
+
+async function sendTrial(trial) {
+  try {
+    await supabaseClient.from('tol_trials').insert(trial);
+  } catch(e) { console.warn(e); }
+}
+
+function finishTask() {
+  const mainTrials = trials.filter(t => t.phase === 'main');
+  const totalProblems = mainTrials.length;
+  const exactSolutions = mainTrials.filter(t => t.exact_solution).length;
+  const avgMoves = mainTrials.reduce((a,b)=>a+b.moves_used,0)/totalProblems;
+  const avgTime = mainTrials.reduce((a,b)=>a+b.time_seconds,0)/totalProblems;
+  const accuracy = (exactSolutions/totalProblems*100).toFixed(1);
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Exactas (mín. mov.)</div><div class="stat-value accent">${exactSolutions}/${totalProblems}</div></div>
+    <div class="stat-card"><div class="stat-label">Media movimientos</div><div class="stat-value accent3">${avgMoves.toFixed(1)}</div></div>
+    <div class="stat-card"><div class="stat-label">Media tiempo (s)</div><div class="stat-value accent2">${avgTime.toFixed(1)}</div></div>
+    <div class="stat-card"><div class="stat-label">Precisión</div><div class="stat-value">${accuracy}%</div></div>
+  `;
+  const ctx = document.getElementById('taskChart').getContext('2d');
+  if (window.tolChart) window.tolChart.destroy();
+  window.tolChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: mainTrials.map((_,i)=>`P${i+1}`),
+      datasets: [
+        { label: 'Movimientos usados', data: mainTrials.map(t=>t.moves_used), backgroundColor: '#ff4a6e' },
+        { label: 'Mínimo', data: mainTrials.map(t=>t.min_moves), backgroundColor: '#4affda' }
+      ]
+    },
+    options: { responsive: true }
+  });
+  const logDiv = document.getElementById('trialLog'); logDiv.innerHTML = '';
+  mainTrials.forEach((t,i) => {
+    const row = document.createElement('div'); row.className='trial-row';
+    row.innerHTML = `<span>${i+1}</span><span>${t.min_moves}</span><span>${t.moves_used}</span><span class="${t.exact_solution?'correct-dot':'wrong-dot'}">${t.exact_solution?'✓':'✗'}</span>`;
+    logDiv.appendChild(row);
+  });
+  document.getElementById('paperText').innerHTML = `Tower of London – Resultados\nGrupo: ${group}\nProblemas resueltos con mínimo: ${exactSolutions}/${totalProblems}\nMedia movimientos: ${avgMoves.toFixed(1)}\nMedia tiempo: ${avgTime.toFixed(1)} s\nPrecisión: ${accuracy}%`;
+  showScreen('screen-results');
+}
+
+function runPriming() {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('primingOverlay');
+    const msgDiv = document.getElementById('primingMsg');
+    const subDiv = document.getElementById('primingSub');
+    const fillDiv = document.getElementById('primingFill');
+    const steps = [
+      { msg: "🧠 FOCUS ATTENTION", sub: "Prepare planning" },
+      { msg: "🏰 PLAN YOUR MOVES", sub: "Reach the target configuration" },
+      { msg: "🎯 READY", sub: "Tower of London begins" }
+    ];
+    overlay.classList.add('active');
+    let stepIdx = 0;
+    function showStep() {
+      if (stepIdx >= steps.length) { overlay.classList.remove('active'); resolve(); return; }
+      msgDiv.innerText = steps[stepIdx].msg;
+      subDiv.innerText = steps[stepIdx].sub;
+      fillDiv.style.width = '0%';
+      let start = Date.now();
+      const duration = 1500;
+      const interval = setInterval(() => {
+        let elapsed = Date.now() - start;
+        let percent = Math.min(100, (elapsed / duration) * 100);
+        fillDiv.style.width = percent + '%';
+        if (elapsed >= duration) { clearInterval(interval); stepIdx++; showStep(); }
+      }, 20);
+    }
+    showStep();
+  });
+}
+async function startStudy() { if (!group) return; if (group === 'experimental') { await runPriming(); startCoreTask(); } else { startCoreTask(); } }
+
+function exportCSV() {
+  const main = trials.filter(t => t.phase === 'main');
+  if (!main.length) return;
+  const headers = Object.keys(main[0]).join(',');
+  const rows = main.map(row => Object.values(row).map(v => JSON.stringify(v ?? '')).join(',')).join('\n');
+  const blob = new Blob([headers + '\n' + rows], {type: 'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `tol_${participantId}.csv`; a.click();
+}
+function exportJSON() {
+  const main = trials.filter(t => t.phase === 'main');
+  const payload = { meta: { participantId, group }, trials: main };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `tol_${participantId}.json`; a.click();
+}
+function resetStudy() { location.reload(); }
+function regenerateID() { participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase(); document.getElementById('pidDisplay').innerText = participantId; }
+function selectGroup(g) { group = g; document.getElementById('btn-exp').classList.toggle('selected', g==='experimental'); document.getElementById('btn-ctrl').classList.toggle('selected', g==='control'); document.getElementById('startBtn').disabled = false; }
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+document.getElementById('pidDisplay').innerText = participantId;
+</script>
+</body>
+</html>

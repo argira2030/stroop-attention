@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Iowa Gambling Task · Toma de decisiones</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ===== MISMOS ESTILOS BASE ===== */
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --muted: #666;
+  --accent: #e8ff4a;
+  --accent2: #ff4a6e;
+  --accent3: #4affda;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Space Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(232,255,74,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,255,74,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; }
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 32px; border-bottom: 1px solid var(--border);
+  background: rgba(10,10,10,0.8); backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+.badge { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; border: 1px solid var(--border); padding: 4px 10px; border-radius: 2px; }
+#screen-intro { justify-content: center; align-items: center; padding: 40px 32px; }
+.intro-content { max-width: 600px; width: 100%; animation: fadeUp 0.6s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.intro-tag { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+.intro-title { font-family: 'Syne', sans-serif; font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.05; margin-bottom: 24px; }
+.intro-title span { color: var(--accent); }
+.intro-desc { font-size: 13px; line-height: 1.8; color: #aaa; margin-bottom: 32px; }
+.ethics-box {
+  border: 1px solid var(--border); background: var(--surface); padding: 16px 20px;
+  border-radius: 4px; font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 32px;
+}
+.ethics-box strong { color: var(--accent3); display: block; margin-bottom: 4px; letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px; }
+.group-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.group-btn {
+  padding: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  cursor: pointer; font-family: 'Space Mono', monospace; font-size: 12px; text-align: left;
+  border-radius: 4px; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.group-btn::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; }
+.group-btn.experimental::before { background: linear-gradient(135deg, rgba(232,255,74,0.08), transparent); }
+.group-btn.control::before { background: linear-gradient(135deg, rgba(74,255,218,0.08), transparent); }
+.group-btn:hover::before, .group-btn.selected::before { opacity: 1; }
+.group-btn.selected.experimental { border-color: var(--accent); }
+.group-btn.selected.control { border-color: var(--accent3); }
+.group-btn .g-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 4px; display: block; }
+.group-btn.experimental .g-label { color: var(--accent); }
+.group-btn.control .g-label { color: var(--accent3); }
+.group-btn .g-desc { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.btn-primary { width: 100%; padding: 16px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+#screen-task { align-items: center; justify-content: center; padding: 40px 32px; }
+.task-wrapper { max-width: 700px; width: 100%; }
+.progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 32px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+.trial-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 24px; }
+.stroop-stage-label { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); text-align: center; margin-bottom: 12px; }
+.deck-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin: 20px 0;
+}
+.deck-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.deck-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+.deck-card.selected { border-color: var(--accent); background: rgba(232,255,74,0.05); }
+.deck-name { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; letter-spacing: 0.1em; margin-bottom: 8px; }
+.deck-desc { font-size: 11px; color: var(--muted); }
+.score-area {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 20px;
+  text-align: center;
+}
+.score-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--accent);
+}
+.feedback-flash { position: fixed; inset: 0; pointer-events: none; z-index: 200; opacity: 0; transition: opacity 0.1s; }
+.feedback-flash.correct { background: rgba(74,255,218,0.07); opacity: 1; }
+.feedback-flash.wrong { background: rgba(255,74,110,0.07); opacity: 1; }
+.rt-ticker { position: fixed; top: 80px; right: 32px; font-size: 11px; color: var(--muted); font-family: monospace; background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 20px; }
+#screen-results { padding: 40px 32px; align-items: center; }
+.results-content { max-width: 800px; width: 100%; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 4px; }
+.stat-label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
+.stat-value.accent { color: var(--accent); }
+.stat-value.accent2 { color: var(--accent2); }
+.stat-value.accent3 { color: var(--accent3); }
+.chart-section { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 24px; }
+.chart-title { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+canvas { max-height: 260px; width: 100%; }
+.trial-log { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 24px; }
+.trial-log-header { padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+.trial-log-body { max-height: 200px; overflow-y: auto; font-size: 11px; }
+.trial-row { display: grid; grid-template-columns: 40px 80px 80px 80px; padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.03); align-items: center; gap: 8px; }
+.trial-row.header { color: var(--muted); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; background: rgba(255,255,255,0.02); }
+.paper-box { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
+.paper-box h3 { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+.paper-text { font-size: 12px; line-height: 1.9; color: #ccc; white-space: pre-wrap; font-family: 'Space Mono', monospace; }
+.action-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-export { flex: 1; min-width: 140px; padding: 14px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-outline { flex: 1; min-width: 140px; padding: 14px; background: transparent; color: var(--text); border: 1px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.priming-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(12px);
+  z-index: 300; display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+}
+.priming-overlay.active { opacity: 1; visibility: visible; }
+.priming-card { max-width: 500px; background: var(--surface); border: 1px solid var(--accent); padding: 40px 32px; border-radius: 12px; text-align: center; }
+.priming-icon { font-size: 48px; margin-bottom: 20px; }
+.priming-message { font-size: 24px; font-weight: 700; margin-bottom: 16px; color: var(--accent); }
+.priming-sub { font-size: 13px; color: var(--muted); }
+.priming-progress { margin-top: 28px; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.priming-progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.2s linear; }
+@media (max-width: 680px) {
+  .stats-grid { grid-template-columns: 1fr; gap: 8px; }
+  .stat-value { font-size: 20px; }
+  .trial-row { grid-template-columns: 30px 60px 60px 60px; font-size: 9px; gap: 4px; }
+  .rt-ticker { top: auto; bottom: 16px; right: 16px; }
+  .deck-grid { gap: 12px; }
+  .deck-card { padding: 16px; }
+  .deck-name { font-size: 24px; }
+  .score-value { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+
+<div class="feedback-flash" id="feedbackFlash"></div>
+<div id="primingOverlay" class="priming-overlay">
+  <div class="priming-card">
+    <div class="priming-icon">🎲</div>
+    <div class="priming-message" id="primingMsg">Focus attention</div>
+    <div class="priming-sub" id="primingSub">Prepare for Iowa Gambling Task</div>
+    <div class="priming-progress"><div class="priming-progress-fill" id="primingFill"></div></div>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="screen active" id="screen-intro">
+  <div class="header">
+    <div class="logo">IOWA · HCI</div>
+    <div class="badge">Decision Making</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
+    <div class="intro-content">
+      <div class="intro-tag">// Iowa Gambling Task (Bechara et al., 1994)</div>
+      <h1 class="intro-title">Toma de<br><span>Decisiones</span><br>y Riesgo</h1>
+      <p class="intro-desc">Tienes cuatro mazos de cartas (A, B, C, D). Cada vez que eliges un mazo, ganas o pierdes puntos. Tu objetivo es maximizar la puntuación total. Algunos mazos son ventajosos a largo plazo (C y D), otros son desventajosos (A y B). Debes descubrir cuáles son los buenos.</p>
+      <div class="ethics-box"><strong>⚖ Declaración ética</strong><span>Sin tracking. Datos locales y en Supabase.</span></div>
+      <div class="ethics-box" style="border-color:#333; display:flex; justify-content:space-between;">
+        <div><strong style="color:var(--accent)">⬡ PARTICIPANT ID</strong><span id="pidDisplay" style="margin-left:12px;"></span></div>
+        <button onclick="regenerateID()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:4px 8px;">↺</button>
+      </div>
+      <div style="margin-bottom:16px; font-size:11px; color:var(--muted);">Selecciona grupo</div>
+      <div class="group-row">
+        <button class="group-btn experimental" onclick="selectGroup('experimental')" id="btn-exp"><span class="g-label">Experimental</span><span class="g-desc">Recibe preparación atencional</span></button>
+        <button class="group-btn control" onclick="selectGroup('control')" id="btn-ctrl"><span class="g-label">Control</span><span class="g-desc">Secuencia directa</span></button>
+      </div>
+      <button class="btn-primary" id="startBtn" disabled onclick="startStudy()">Comenzar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK -->
+<div class="screen" id="screen-task">
+  <div class="header">
+    <div class="logo">IOWA · HCI</div>
+    <div class="badge" id="phaseLabel">Práctica</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:32px 24px;">
+    <div class="task-wrapper">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>
+      <div class="trial-meta">
+        <span id="trialCounter">Elección 0 / 100</span>
+        <span id="phaseDesc">Selecciona un mazo</span>
+      </div>
+      <div class="stroop-stage-label" id="stageLabel">Elige un mazo</div>
+      <div class="deck-grid">
+        <div class="deck-card" data-deck="A" onclick="selectDeck('A')">
+          <div class="deck-name">A</div>
+          <div class="deck-desc">???</div>
+        </div>
+        <div class="deck-card" data-deck="B" onclick="selectDeck('B')">
+          <div class="deck-name">B</div>
+          <div class="deck-desc">???</div>
+        </div>
+        <div class="deck-card" data-deck="C" onclick="selectDeck('C')">
+          <div class="deck-name">C</div>
+          <div class="deck-desc">???</div>
+        </div>
+        <div class="deck-card" data-deck="D" onclick="selectDeck('D')">
+          <div class="deck-name">D</div>
+          <div class="deck-desc">???</div>
+        </div>
+      </div>
+      <div class="score-area">
+        <div style="font-size: 11px; letter-spacing: 0.1em;">PUNTUACIÓN</div>
+        <div class="score-value" id="scoreDisplay">0</div>
+      </div>
+    </div>
+  </div>
+  <div class="rt-ticker" id="rtTicker"></div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="screen-results">
+  <div class="header"><div class="logo">IOWA · HCI</div><div class="badge">Análisis completo</div></div>
+  <div style="padding:40px 32px; display:flex; justify-content:center;">
+    <div class="results-content">
+      <h2 class="results-title">Resultados</h2><p class="results-subtitle" id="resultsMeta"></p>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="chart-section"><div class="chart-title">// Índice neto por bloque (ventajosas - desventajosas)</div><canvas id="taskChart" height="200"></canvas></div>
+      <div class="trial-log"><div class="trial-log-header">// Registro de elecciones</div><div class="trial-log-body"><div class="trial-row header"><span>#</span><span>Mazo</span><span>Ganancia</span><span>Pérdida</span><span>Neto</span><span>Acumulado</span></div><div id="trialLog"></div></div></div>
+      <div class="paper-box"><h3>// Informe (estilo APA)</h3><div class="paper-text" id="paperText"></div></div>
+      <div class="action-row">
+        <button class="btn-export" onclick="exportCSV()">↓ Exportar CSV</button>
+        <button class="btn-export" style="background:var(--accent3);color:#000;" onclick="exportJSON()">↓ Exportar JSON</button>
+        <button class="btn-outline" onclick="resetStudy()">↺ Nueva sesión</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  SUPABASE CONFIG
+// ============================================================
+const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function sendTrial(trial) {
+  try {
+    await supabaseClient.from('iowa_trials').insert(trial);
+  } catch(e) { console.warn(e); }
+}
+
+// ============================================================
+//  PARÁMETROS DE LA TAREA (probabilidades ocultas)
+// ============================================================
+// Mazos desventajosos (A y B): alta ganancia inmediata pero pérdidas grandes y frecuentes
+// Mazos ventajosos (C y D): ganancia moderada, pérdidas pequeñas y menos frecuentes
+const DECK_PARAMS = {
+  A: { gain: 100, lossProb: 0.5, lossAmount: 250, description: "???" },
+  B: { gain: 100, lossProb: 0.5, lossAmount: 250, description: "???" },
+  C: { gain: 50,  lossProb: 0.5, lossAmount: 50,  description: "???" },
+  D: { gain: 50,  lossProb: 0.5, lossAmount: 50,  description: "???" }
+};
+// Ajuste para que la pérdida no sea siempre igual: algunas variaciones
+DECK_PARAMS.A.lossProb = 0.5; DECK_PARAMS.A.lossAmount = 250;
+DECK_PARAMS.B.lossProb = 0.5; DECK_PARAMS.B.lossAmount = 250;
+DECK_PARAMS.C.lossProb = 0.5; DECK_PARAMS.C.lossAmount = 50;
+DECK_PARAMS.D.lossProb = 0.5; DECK_PARAMS.D.lossAmount = 50;
+
+let participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
+let group = null;
+let totalScore = 0;
+let trialsData = [];
+let currentTrial = 0;
+const TOTAL_TRIALS = 100;
+let phase = 'practice';
+let practiceTrials = 0;
+let startTime = 0;
+let waiting = false;
+
+function getDeckOutcome(deck) {
+  const p = DECK_PARAMS[deck];
+  const gain = p.gain;
+  let loss = 0;
+  if (Math.random() < p.lossProb) {
+    loss = p.lossAmount;
+  }
+  return { gain, loss, net: gain - loss };
+}
+
+function selectDeck(deck) {
+  if (!waiting) return;
+  const rt = Math.round(performance.now() - startTime);
+  document.getElementById('rtTicker').innerHTML = rt + ' ms';
+  const outcome = getDeckOutcome(deck);
+  const prevScore = totalScore;
+  totalScore += outcome.net;
+  document.getElementById('scoreDisplay').innerText = totalScore;
+  
+  // Flash feedback
+  const flash = document.getElementById('feedbackFlash');
+  flash.className = 'feedback-flash ' + (outcome.net > 0 ? 'correct' : 'wrong');
+  setTimeout(() => flash.className = 'feedback-flash', 200);
+  
+  const record = {
+    participant_id: participantId,
+    cohort: group,
+    trial: currentTrial + 1,
+    deck: deck,
+    gain: outcome.gain,
+    loss: outcome.loss,
+    net: outcome.net,
+    cumulative_score: totalScore,
+    rt_ms: rt,
+    phase: phase,
+    timestamp: new Date().toISOString()
+  };
+  trialsData.push(record);
+  if (phase === 'main') sendTrial(record);
+  
+  // Registrar en tabla visual
+  const logDiv = document.getElementById('trialLog');
+  const row = document.createElement('div'); row.className='trial-row';
+  row.innerHTML = `<span>${currentTrial+1}</span><span>${deck}</span><span>+${outcome.gain}</span><span>-${outcome.loss}</span><span>${outcome.net>0?'+'+outcome.net:outcome.net}</span><span>${totalScore}</span>`;
+  logDiv.appendChild(row);
+  logDiv.scrollTop = logDiv.scrollHeight;
+  
+  currentTrial++;
+  document.getElementById('trialCounter').innerHTML = `Elección ${currentTrial} / ${TOTAL_TRIALS}`;
+  document.getElementById('progressBar').style.width = (currentTrial / TOTAL_TRIALS * 100) + '%';
+  
+  if (phase === 'practice') {
+    practiceTrials++;
+    if (practiceTrials >= 10) {
+      phase = 'main';
+      document.getElementById('phaseLabel').innerText = 'Fase principal';
+      practiceTrials = 0;
+    }
+  }
+  
+  if (currentTrial >= TOTAL_TRIALS) {
+    finishTask();
+    return;
+  }
+  
+  // Habilitar siguiente elección tras breve pausa
+  waiting = false;
+  setTimeout(() => {
+    waiting = true;
+    startTime = performance.now();
+  }, 500);
+}
+
+function startCoreTask() {
+  totalScore = 0;
+  currentTrial = 0;
+  trialsData = [];
+  phase = 'practice';
+  practiceTrials = 0;
+  document.getElementById('scoreDisplay').innerText = '0';
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('trialCounter').innerHTML = `Elección 0 / ${TOTAL_TRIALS}`;
+  document.getElementById('phaseLabel').innerText = 'Práctica';
+  document.getElementById('trialLog').innerHTML = '';
+  showScreen('screen-task');
+  waiting = true;
+  startTime = performance.now();
+}
+
+function finishTask() {
+  // Calcular índice neto por bloques de 20 ensayos
+  const mainTrials = trialsData.filter(t => t.phase === 'main');
+  const blocks = [];
+  for (let i = 0; i < 5; i++) {
+    const start = i * 20;
+    const end = start + 20;
+    const blockTrials = mainTrials.slice(start, end);
+    const advantageous = blockTrials.filter(t => t.deck === 'C' || t.deck === 'D').length;
+    const disadvantageous = blockTrials.filter(t => t.deck === 'A' || t.deck === 'B').length;
+    const net = advantageous - disadvantageous;
+    blocks.push(net);
+  }
+  const totalAdv = mainTrials.filter(t => t.deck === 'C' || t.deck === 'D').length;
+  const totalDisadv = mainTrials.filter(t => t.deck === 'A' || t.deck === 'B').length;
+  const finalNet = totalAdv - totalDisadv;
+  
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Índice neto total</div><div class="stat-value accent">${finalNet}</div></div>
+    <div class="stat-card"><div class="stat-label">Mazos ventajosos (C+D)</div><div class="stat-value accent3">${totalAdv}</div></div>
+    <div class="stat-card"><div class="stat-label">Mazos desventajosos (A+B)</div><div class="stat-value accent2">${totalDisadv}</div></div>
+    <div class="stat-card"><div class="stat-label">Puntuación final</div><div class="stat-value">${totalScore}</div></div>
+  `;
+  
+  // Gráfico de índice neto por bloque
+  const ctx = document.getElementById('taskChart').getContext('2d');
+  if (window.iowaChart) window.iowaChart.destroy();
+  window.iowaChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Bloque 1', 'Bloque 2', 'Bloque 3', 'Bloque 4', 'Bloque 5'],
+      datasets: [{
+        label: 'Índice neto (ventajosas - desventajosas)',
+        data: blocks,
+        backgroundColor: '#e8ff4a',
+        borderRadius: 4
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: true }
+  });
+  
+  const paperText = `Iowa Gambling Task – Resultados\nGrupo: ${group}\nÍndice neto total: ${finalNet}\nElecciones ventajosas (C/D): ${totalAdv}, desventajosas (A/B): ${totalDisadv}\nPuntuación final: ${totalScore}\nInterpretación: ${finalNet > 0 ? 'Buena toma de decisiones a largo plazo.' : 'Dificultad para aprender la contingencia. Posible riesgo.'}`;
+  document.getElementById('paperText').innerText = paperText;
+  document.getElementById('resultsMeta').innerHTML = `Total ensayos: ${mainTrials.length} · Índice neto: ${finalNet}`;
+  showScreen('screen-results');
+}
+
+function runPriming() {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('primingOverlay');
+    const msgDiv = document.getElementById('primingMsg');
+    const subDiv = document.getElementById('primingSub');
+    const fillDiv = document.getElementById('primingFill');
+    const steps = [
+      { msg: "🎲 FOCUS ATTENTION", sub: "Prepare decision making" },
+      { msg: "💰 MAXIMIZE YOUR SCORE", sub: "Learn which decks are good" },
+      { msg: "🎯 READY", sub: "Iowa Gambling Task begins" }
+    ];
+    overlay.classList.add('active');
+    let stepIdx = 0;
+    function showStep() {
+      if (stepIdx >= steps.length) { overlay.classList.remove('active'); resolve(); return; }
+      msgDiv.innerText = steps[stepIdx].msg;
+      subDiv.innerText = steps[stepIdx].sub;
+      fillDiv.style.width = '0%';
+      let startTime = Date.now();
+      const duration = 1500;
+      const interval = setInterval(() => {
+        let elapsed = Date.now() - startTime;
+        let percent = Math.min(100, (elapsed / duration) * 100);
+        fillDiv.style.width = percent + '%';
+        if (elapsed >= duration) { clearInterval(interval); stepIdx++; showStep(); }
+      }, 20);
+    }
+    showStep();
+  });
+}
+
+async function startStudy() { if (!group) return; if (group === 'experimental') { await runPriming(); startCoreTask(); } else { startCoreTask(); } }
+
+function exportCSV() {
+  const main = trialsData.filter(t => t.phase === 'main');
+  if (!main.length) return;
+  const headers = Object.keys(main[0]).join(',');
+  const rows = main.map(row => Object.values(row).map(v => JSON.stringify(v ?? '')).join(',')).join('\n');
+  const blob = new Blob([headers + '\n' + rows], {type: 'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `iowa_${participantId}.csv`; a.click();
+}
+function exportJSON() {
+  const main = trialsData.filter(t => t.phase === 'main');
+  const payload = { meta: { participantId, group, exportedAt: new Date().toISOString() }, trials: main };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `iowa_${participantId}.json`; a.click();
+}
+function resetStudy() { location.reload(); }
+
+function regenerateID() { participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase(); document.getElementById('pidDisplay').innerText = participantId; }
+function selectGroup(g) { group = g; document.getElementById('btn-exp').classList.toggle('selected', g==='experimental'); document.getElementById('btn-ctrl').classList.toggle('selected', g==='control'); document.getElementById('startBtn').disabled = false; }
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+document.getElementById('pidDisplay').innerText = participantId;
+</script>
+</body>
+</html>

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Corsi Block Tapping · Visuospatial Memory</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ===== MISMOS ESTILOS BASE ===== */
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --muted: #666;
+  --accent: #e8ff4a;
+  --accent2: #ff4a6e;
+  --accent3: #4affda;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Space Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(232,255,74,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,255,74,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; }
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 32px; border-bottom: 1px solid var(--border);
+  background: rgba(10,10,10,0.8); backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+.badge { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; border: 1px solid var(--border); padding: 4px 10px; border-radius: 2px; }
+#screen-intro { justify-content: center; align-items: center; padding: 40px 32px; }
+.intro-content { max-width: 600px; width: 100%; animation: fadeUp 0.6s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.intro-tag { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+.intro-title { font-family: 'Syne', sans-serif; font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.05; margin-bottom: 24px; }
+.intro-title span { color: var(--accent); }
+.intro-desc { font-size: 13px; line-height: 1.8; color: #aaa; margin-bottom: 32px; }
+.ethics-box {
+  border: 1px solid var(--border); background: var(--surface); padding: 16px 20px;
+  border-radius: 4px; font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 32px;
+}
+.ethics-box strong { color: var(--accent3); display: block; margin-bottom: 4px; letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px; }
+.group-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.group-btn {
+  padding: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  cursor: pointer; font-family: 'Space Mono', monospace; font-size: 12px; text-align: left;
+  border-radius: 4px; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.group-btn::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; }
+.group-btn.experimental::before { background: linear-gradient(135deg, rgba(232,255,74,0.08), transparent); }
+.group-btn.control::before { background: linear-gradient(135deg, rgba(74,255,218,0.08), transparent); }
+.group-btn:hover::before, .group-btn.selected::before { opacity: 1; }
+.group-btn.selected.experimental { border-color: var(--accent); }
+.group-btn.selected.control { border-color: var(--accent3); }
+.group-btn .g-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 4px; display: block; }
+.group-btn.experimental .g-label { color: var(--accent); }
+.group-btn.control .g-label { color: var(--accent3); }
+.group-btn .g-desc { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.btn-primary { width: 100%; padding: 16px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+#screen-task { align-items: center; justify-content: center; padding: 40px 32px; }
+.task-wrapper { max-width: 700px; width: 100%; }
+.progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 20px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+.trial-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 20px; }
+.stroop-stage-label { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); text-align: center; margin-bottom: 12px; }
+.corsi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  max-width: 400px;
+  margin: 0 auto 30px;
+}
+.corsi-block {
+  aspect-ratio: 1 / 1;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+.corsi-block.active {
+  background: var(--accent3);
+  border-color: var(--accent3);
+  transform: scale(0.98);
+}
+.corsi-block.waiting {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.corsi-block.error-flash {
+  background: var(--accent2);
+  border-color: var(--accent2);
+}
+.feedback-flash { position: fixed; inset: 0; pointer-events: none; z-index: 200; opacity: 0; transition: opacity 0.1s; }
+.feedback-flash.correct { background: rgba(74,255,218,0.07); opacity: 1; }
+.feedback-flash.wrong { background: rgba(255,74,110,0.07); opacity: 1; }
+.rt-ticker { position: fixed; top: 80px; right: 32px; font-size: 11px; color: var(--muted); font-family: monospace; background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 20px; }
+#screen-results { padding: 40px 32px; align-items: center; }
+.results-content { max-width: 800px; width: 100%; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 4px; }
+.stat-label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
+.stat-value.accent { color: var(--accent); }
+.stat-value.accent2 { color: var(--accent2); }
+.stat-value.accent3 { color: var(--accent3); }
+.chart-section { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 24px; }
+.chart-title { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+canvas { max-height: 260px; width: 100%; }
+.trial-log { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 24px; }
+.trial-log-header { padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+.trial-log-body { max-height: 200px; overflow-y: auto; font-size: 11px; }
+.trial-row { display: grid; grid-template-columns: 40px 80px 80px 60px; padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.03); align-items: center; gap: 8px; }
+.trial-row.header { color: var(--muted); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; background: rgba(255,255,255,0.02); }
+.correct-dot { color: var(--success); }
+.wrong-dot { color: var(--danger); }
+.paper-box { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
+.paper-box h3 { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+.paper-text { font-size: 12px; line-height: 1.9; color: #ccc; white-space: pre-wrap; font-family: 'Space Mono', monospace; }
+.action-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-export { flex: 1; min-width: 140px; padding: 14px; background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.btn-outline { flex: 1; min-width: 140px; padding: 14px; background: transparent; color: var(--text); border: 1px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+.priming-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(12px);
+  z-index: 300; display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+}
+.priming-overlay.active { opacity: 1; visibility: visible; }
+.priming-card { max-width: 500px; background: var(--surface); border: 1px solid var(--accent); padding: 40px 32px; border-radius: 12px; text-align: center; }
+.priming-icon { font-size: 48px; margin-bottom: 20px; }
+.priming-message { font-size: 24px; font-weight: 700; margin-bottom: 16px; color: var(--accent); }
+.priming-sub { font-size: 13px; color: var(--muted); }
+.priming-progress { margin-top: 28px; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.priming-progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.2s linear; }
+@media (max-width: 680px) {
+  .corsi-grid { gap: 8px; max-width: 280px; }
+  .stats-grid { grid-template-columns: 1fr; gap: 8px; }
+  .stat-value { font-size: 20px; }
+  .trial-row { grid-template-columns: 30px 60px 60px 50px; font-size: 9px; gap: 4px; }
+  .rt-ticker { top: auto; bottom: 16px; right: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="feedback-flash" id="feedbackFlash"></div>
+<div id="primingOverlay" class="priming-overlay">
+  <div class="priming-card">
+    <div class="priming-icon">🧠</div>
+    <div class="priming-message" id="primingMsg">Focus attention</div>
+    <div class="priming-sub" id="primingSub">Prepare for Corsi task</div>
+    <div class="priming-progress"><div class="priming-progress-fill" id="primingFill"></div></div>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="screen active" id="screen-intro">
+  <div class="header">
+    <div class="logo">CORSI · HCI</div>
+    <div class="badge">Visuospatial Memory</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
+    <div class="intro-content">
+      <div class="intro-tag">// Corsi Block Tapping Task</div>
+      <h1 class="intro-title">Memoria<br><span>Visoespacial</span><br>y Span</h1>
+      <p class="intro-desc">Observa la secuencia en que se iluminan los bloques. Después, repite la misma secuencia en el mismo orden. Cada bloque solo puede ser presionado una vez por secuencia. La longitud de la secuencia aumenta después de dos aciertos consecutivos.</p>
+      <div class="ethics-box"><strong>⚖ Declaración ética</strong><span>Sin tracking. Datos locales y en Supabase.</span></div>
+      <div class="ethics-box" style="border-color:#333; display:flex; justify-content:space-between;">
+        <div><strong style="color:var(--accent)">⬡ PARTICIPANT ID</strong><span id="pidDisplay" style="margin-left:12px;"></span></div>
+        <button onclick="regenerateID()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:4px 8px;">↺</button>
+      </div>
+      <div style="margin-bottom:16px; font-size:11px; color:var(--muted);">Selecciona grupo</div>
+      <div class="group-row">
+        <button class="group-btn experimental" onclick="selectGroup('experimental')" id="btn-exp"><span class="g-label">Experimental</span><span class="g-desc">Recibe preparación atencional</span></button>
+        <button class="group-btn control" onclick="selectGroup('control')" id="btn-ctrl"><span class="g-label">Control</span><span class="g-desc">Secuencia directa</span></button>
+      </div>
+      <button class="btn-primary" id="startBtn" disabled onclick="startStudy()">Comenzar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK -->
+<div class="screen" id="screen-task">
+  <div class="header">
+    <div class="logo">CORSI · HCI</div>
+    <div class="badge" id="phaseLabel">Práctica</div>
+  </div>
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:32px 24px;">
+    <div class="task-wrapper">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>
+      <div class="trial-meta">
+        <span id="trialCounter">Secuencia 0</span>
+        <span id="phaseDesc">Longitud: 0</span>
+      </div>
+      <div class="stroop-stage-label" id="stageLabel">Repite la secuencia</div>
+      <div class="corsi-grid" id="corsiGrid">
+        <!-- 9 bloques (3x3) generados por JS -->
+      </div>
+    </div>
+  </div>
+  <div class="rt-ticker" id="rtTicker"></div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="screen-results">
+  <div class="header"><div class="logo">CORSI · HCI</div><div class="badge">Análisis completo</div></div>
+  <div style="padding:40px 32px; display:flex; justify-content:center;">
+    <div class="results-content">
+      <h2 class="results-title">Resultados</h2><p class="results-subtitle" id="resultsMeta"></p>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="chart-section"><div class="chart-title">// Span máximo y errores</div><canvas id="taskChart" height="200"></canvas></div>
+      <div class="trial-log"><div class="trial-log-header">// Registro de secuencias</div><div class="trial-log-body"><div class="trial-row header"><span>#</span><span>Longitud</span><span>Aciertos</span><span>RT medio</span></div><div id="trialLog"></div></div></div>
+      <div class="paper-box"><h3>// Informe (estilo APA)</h3><div class="paper-text" id="paperText"></div></div>
+      <div class="action-row">
+        <button class="btn-export" onclick="exportCSV()">↓ Exportar CSV</button>
+        <button class="btn-export" style="background:var(--accent3);color:#000;" onclick="exportJSON()">↓ Exportar JSON</button>
+        <button class="btn-outline" onclick="resetStudy()">↺ Nueva sesión</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  SUPABASE CONFIG
+// ============================================================
+const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function sendSequence(seqData) {
+  try {
+    await supabaseClient.from('corsi_trials').insert(seqData);
+  } catch(e) { console.warn(e); }
+}
+
+// ============================================================
+//  CONSTANTES Y ESTADO
+// ============================================================
+let participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
+let group = null;
+
+let sequences = [];       // almacena cada secuencia (fase, longitud, aciertos, etc.)
+let currentLength = 2;
+let correctStreak = 0;
+let maxSpan = 0;
+let totalErrors = 0;
+let totalSequences = 0;
+let phase = 'practice';   // 'practice' o 'main'
+let practiceCount = 0;
+
+let currentSequence = []; // índices de bloques (0-8) de la demostración
+let userClicks = [];
+let isPlaying = false;
+let canClick = false;
+let blockClickTimes = [];
+let seqStartTime = 0;
+
+const GRID_SIZE = 9; // 3x3
+let blocks = [];
+
+// ============================================================
+//  GENERAR INTERFAZ DE BLOQUES
+// ============================================================
+function buildGrid() {
+  const grid = document.getElementById('corsiGrid');
+  grid.innerHTML = '';
+  blocks = [];
+  for (let i = 0; i < GRID_SIZE; i++) {
+    const block = document.createElement('div');
+    block.className = 'corsi-block';
+    block.dataset.index = i;
+    block.addEventListener('click', () => onBlockClick(i));
+    grid.appendChild(block);
+    blocks.push(block);
+  }
+}
+
+// ============================================================
+//  GENERAR SECUENCIA ALEATORIA DE LONGITUD L (sin repetición inmediata)
+// ============================================================
+function generateSequence(length) {
+  let seq = [];
+  for (let i = 0; i < length; i++) {
+    let newBlock;
+    do {
+      newBlock = Math.floor(Math.random() * GRID_SIZE);
+    } while (i > 0 && newBlock === seq[i-1]); // evitar repetición consecutiva
+    seq.push(newBlock);
+  }
+  return seq;
+}
+
+// ============================================================
+//  MOSTRAR SECUENCIA AL PARTICIPANTE
+// ============================================================
+async function playSequence(seq) {
+  isPlaying = true;
+  canClick = false;
+  document.querySelectorAll('.corsi-block').forEach(b => b.classList.add('waiting'));
+  for (let idx of seq) {
+    const block = blocks[idx];
+    block.classList.add('active');
+    await new Promise(r => setTimeout(r, 400));
+    block.classList.remove('active');
+    await new Promise(r => setTimeout(r, 200));
+  }
+  isPlaying = false;
+  canClick = true;
+  document.querySelectorAll('.corsi-block').forEach(b => b.classList.remove('waiting'));
+  userClicks = [];
+  blockClickTimes = [];
+  seqStartTime = performance.now();
+}
+
+// ============================================================
+//  MANEJAR CLIC DEL PARTICIPANTE
+// ============================================================
+function onBlockClick(idx) {
+  if (!canClick || isPlaying) return;
+  const clickTime = performance.now() - seqStartTime;
+  if (userClicks.length < currentSequence.length) {
+    userClicks.push(idx);
+    blockClickTimes.push(clickTime);
+    // feedback visual breve
+    blocks[idx].classList.add('active');
+    setTimeout(() => blocks[idx].classList.remove('active'), 150);
+    if (userClicks.length === currentSequence.length) {
+      // fin de la respuesta
+      evaluateSequence();
+    }
+  }
+}
+
+// ============================================================
+//  EVALUAR SECUENCIA
+// ============================================================
+function evaluateSequence() {
+  const correct = userClicks.length === currentSequence.length &&
+                  userClicks.every((click, i) => click === currentSequence[i]);
+  const rtMean = blockClickTimes.length ? blockClickTimes.reduce((a,b)=>a+b,0)/blockClickTimes.length : 0;
+
+  const flash = document.getElementById('feedbackFlash');
+  flash.className = 'feedback-flash ' + (correct ? 'correct' : 'wrong');
+  setTimeout(() => flash.className = 'feedback-flash', 200);
+
+  // Registrar secuencia
+  const sequenceRecord = {
+    participant_id: participantId,
+    cohort: group,
+    phase: phase,
+    sequence_length: currentLength,
+    correct: correct,
+    response_sequence: JSON.stringify(userClicks),
+    rt_mean_ms: Math.round(rtMean),
+    timestamp: new Date().toISOString(),
+    created_at: new Date().toISOString()
+  };
+  sequences.push(sequenceRecord);
+  if (phase === 'main') sendSequence(sequenceRecord);
+  totalSequences++;
+
+  if (correct) {
+    correctStreak++;
+    if (correctStreak >= 2 && phase === 'main') {
+      // aumentar longitud
+      currentLength++;
+      if (currentLength > maxSpan) maxSpan = currentLength;
+      correctStreak = 0;
+    }
+  } else {
+    totalErrors++;
+    correctStreak = 0;
+    if (phase === 'main') {
+      // reducir longitud en 1 (o mantener un mínimo de 2)
+      if (currentLength > 2) currentLength--;
+    }
+  }
+
+  // Actualizar UI
+  document.getElementById('phaseDesc').innerHTML = `Longitud: ${currentLength}`;
+  document.getElementById('trialCounter').innerHTML = `Secuencia ${totalSequences+1} | Aciertos seguidos: ${correctStreak}`;
+
+  // Decidir si pasar a siguiente secuencia o terminar
+  if (phase === 'practice') {
+    practiceCount++;
+    if (practiceCount >= 4) {
+      // fin de práctica, pasar a fase principal
+      phase = 'main';
+      currentLength = 2;
+      correctStreak = 0;
+      practiceCount = 0;
+      document.getElementById('phaseLabel').innerText = 'Fase principal';
+    }
+    // generar nueva secuencia
+    currentSequence = generateSequence(currentLength);
+    setTimeout(() => playSequence(currentSequence), 800);
+  } else {
+    // fase principal: criterio de parada (por ejemplo, 3 fallos en la misma longitud o llegar a span 9)
+    if (totalErrors >= 10 || currentLength > 9) {
+      finishTask();
+    } else {
+      currentSequence = generateSequence(currentLength);
+      setTimeout(() => playSequence(currentSequence), 800);
+    }
+  }
+}
+
+// ============================================================
+//  INICIAR TAREA
+// ============================================================
+function startCoreTask() {
+  buildGrid();
+  phase = 'practice';
+  currentLength = 2;
+  correctStreak = 0;
+  maxSpan = 0;
+  totalErrors = 0;
+  totalSequences = 0;
+  sequences = [];
+  practiceCount = 0;
+  document.getElementById('phaseLabel').innerText = 'Práctica';
+  document.getElementById('phaseDesc').innerHTML = `Longitud: ${currentLength}`;
+  document.getElementById('trialCounter').innerHTML = `Secuencia 0 | Aciertos seguidos: 0`;
+  // Generar primera secuencia
+  currentSequence = generateSequence(currentLength);
+  showScreen('screen-task');
+  setTimeout(() => playSequence(currentSequence), 500);
+}
+
+// ============================================================
+//  PRIMING (opcional)
+// ============================================================
+function runPriming() {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('primingOverlay');
+    const msgDiv = document.getElementById('primingMsg');
+    const subDiv = document.getElementById('primingSub');
+    const fillDiv = document.getElementById('primingFill');
+    const steps = [
+      { msg: "🧠 FOCUS ATTENTION", sub: "Prepare visuospatial memory" },
+      { msg: "🔁 REPEAT THE SEQUENCE", sub: "Tap blocks in the same order" },
+      { msg: "🎯 READY", sub: "Corsi task begins" }
+    ];
+    overlay.classList.add('active');
+    let stepIdx = 0;
+    function showStep() {
+      if (stepIdx >= steps.length) { overlay.classList.remove('active'); resolve(); return; }
+      msgDiv.innerText = steps[stepIdx].msg;
+      subDiv.innerText = steps[stepIdx].sub;
+      fillDiv.style.width = '0%';
+      let startTime = Date.now();
+      const duration = 1500;
+      const interval = setInterval(() => {
+        let elapsed = Date.now() - startTime;
+        let percent = Math.min(100, (elapsed / duration) * 100);
+        fillDiv.style.width = percent + '%';
+        if (elapsed >= duration) { clearInterval(interval); stepIdx++; showStep(); }
+      }, 20);
+    }
+    showStep();
+  });
+}
+
+async function startStudy() { if (!group) return; if (group === 'experimental') { await runPriming(); startCoreTask(); } else { startCoreTask(); } }
+
+// ============================================================
+//  FINALIZAR Y MOSTRAR RESULTADOS
+// ============================================================
+function finishTask() {
+  const mainSequences = sequences.filter(s => s.phase === 'main');
+  const totalMain = mainSequences.length;
+  const totalCorrectMain = mainSequences.filter(s => s.correct).length;
+  const accuracy = totalMain ? (totalCorrectMain / totalMain * 100).toFixed(1) : 0;
+  const meanRT = mainSequences.length ? mainSequences.reduce((a,b)=>a+b.rt_mean_ms,0)/mainSequences.length : 0;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Span máximo</div><div class="stat-value accent">${maxSpan}</div></div>
+    <div class="stat-card"><div class="stat-label">Errores totales</div><div class="stat-value accent2">${totalErrors}</div></div>
+    <div class="stat-card"><div class="stat-label">Precisión global</div><div class="stat-value accent3">${accuracy}%</div></div>
+    <div class="stat-card"><div class="stat-label">RT medio (ms)</div><div class="stat-value">${Math.round(meanRT)}</div></div>
+  `;
+
+  // Gráfico simple
+  const ctx = document.getElementById('taskChart').getContext('2d');
+  if (window.corsiChart) window.corsiChart.destroy();
+  window.corsiChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Span máximo', 'Errores'],
+      datasets: [{
+        label: 'Puntuación',
+        data: [maxSpan, totalErrors],
+        backgroundColor: ['#4affda', '#ff4a6e'],
+        borderRadius: 4
+      }]
+    },
+    options: { responsive: true }
+  });
+
+  // Tabla de secuencias
+  const logDiv = document.getElementById('trialLog');
+  logDiv.innerHTML = '';
+  mainSequences.forEach((s,i) => {
+    const row = document.createElement('div'); row.className='trial-row';
+    row.innerHTML = `<span>${i+1}</span><span>${s.sequence_length}</span><span class="${s.correct?'correct-dot':'wrong-dot'}">${s.correct?'✓':'✗'}</span><span>${s.rt_mean_ms} ms</span>`;
+    logDiv.appendChild(row);
+  });
+
+  document.getElementById('paperText').innerHTML = `Corsi Block Tapping – Resultados\nGrupo: ${group}\nSpan máximo: ${maxSpan}\nErrores totales: ${totalErrors}\nPrecisión global: ${accuracy}%\nTiempo medio de respuesta por secuencia: ${Math.round(meanRT)} ms.`;
+  showScreen('screen-results');
+}
+
+// ============================================================
+//  EXPORTACIONES
+// ============================================================
+function exportCSV() {
+  const main = sequences.filter(s => s.phase === 'main');
+  if (!main.length) return;
+  const headers = Object.keys(main[0]).join(',');
+  const rows = main.map(row => Object.values(row).map(v => JSON.stringify(v ?? '')).join(',')).join('\n');
+  const blob = new Blob([headers + '\n' + rows], {type: 'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `corsi_${participantId}.csv`; a.click();
+}
+function exportJSON() {
+  const main = sequences.filter(s => s.phase === 'main');
+  const payload = { meta: { participantId, group, exportedAt: new Date().toISOString() }, sequences: main };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `corsi_${participantId}.json`; a.click();
+}
+function resetStudy() { location.reload(); }
+
+// ============================================================
+//  UI HELPERS
+// ============================================================
+function regenerateID() { participantId = 'P-' + Date.now().toString(36).slice(-6).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase(); document.getElementById('pidDisplay').innerText = participantId; }
+function selectGroup(g) { group = g; document.getElementById('btn-exp').classList.toggle('selected', g==='experimental'); document.getElementById('btn-ctrl').classList.toggle('selected', g==='control'); document.getElementById('startBtn').disabled = false; }
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+document.getElementById('pidDisplay').innerText = participantId;
+</script>
+</body>
+</html>
