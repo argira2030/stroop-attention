@@ -10,9 +10,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
-/* =====================================================
-
-   ===================================================== */
 :root {
   --bg: #0a0a0a;
   --surface: #111111;
@@ -42,7 +39,85 @@ body::before {
   pointer-events: none;
   z-index: 0;
 }
-#dashboard { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+/* Pantalla de login */
+#login-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10,10,10,0.96);
+  backdrop-filter: blur(4px);
+}
+.login-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 40px 32px;
+  width: 340px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+.login-box h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.login-box p {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 28px;
+}
+.login-box input {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.login-box input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+.logout-btn {
+  background: var(--surface);
+  border: 1px solid var(--accent2);
+  color: var(--accent2);
+  margin-left: 12px;
+}
+.login-error {
+  color: var(--accent2);
+  font-size: 11px;
+  margin-top: 12px;
+}
+/* Dashboard */
+#dashboard {
+  display: none;
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  flex-direction: column;
+}
 .topbar {
   display: flex; justify-content: space-between; align-items: center;
   padding: 20px 32px; border-bottom: 1px solid var(--border);
@@ -126,6 +201,20 @@ canvas { max-height: 260px; width: 100%; }
 </style>
 </head>
 <body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>🔐 ACCESO RESTRINGIDO</h1>
+    <p>Dashboard de administración</p>
+    <input type="email" id="login-email" placeholder="Email" autocomplete="off">
+    <input type="password" id="login-password" placeholder="Contraseña">
+    <button class="login-btn" onclick="login()">INICIAR SESIÓN</button>
+    <div id="login-error" class="login-error" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD (contenido real) -->
 <div id="dashboard">
   <div class="topbar">
     <div class="topbar-logo">HCI · COGNITIVE LAB | DASHBOARD</div>
@@ -134,6 +223,7 @@ canvas { max-height: 260px; width: 100%; }
       <button class="btn-sm btn-outline" onclick="loadData()">↺ REFRESH</button>
       <button class="btn-sm btn-accent" onclick="exportCSV()">↓ CSV</button>
       <button class="btn-sm btn-accent" onclick="exportPDF()" style="background:var(--accent2);">📄 PDF</button>
+      <button class="btn-sm logout-btn" onclick="logout()">🚪 CERRAR SESIÓN</button>
     </div>
   </div>
   <div class="task-nav">
@@ -190,16 +280,57 @@ canvas { max-height: 260px; width: 100%; }
     </div>
   </div>
 </div>
+
 <script>
 // ============================================================
-//  SUPABASE CLIENT
+//  SUPABASE CLIENT (autenticación + datos)
 // ============================================================
 const SUPABASE_URL = 'https://ckukuuneveqlwpcmlmun.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_gkhNagCh40x8ba1J9s461Q_o7IqGiTn';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================================
-//  CONFIGURACIÓN DE TAREAS (incluye IAT)
+//  LOGIN / LOGOUT / SESSION
+// ============================================================
+async function login() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  const errorDiv = document.getElementById('login-error');
+  errorDiv.style.display = 'none';
+  try {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadData();
+  } catch (err) {
+    errorDiv.style.display = 'block';
+    errorDiv.innerText = 'Error: ' + (err.message || 'Credenciales incorrectas');
+  }
+}
+
+async function logout() {
+  await supabaseClient.auth.signOut();
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+async function checkSession() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('dashboard').style.display = 'none';
+  }
+}
+
+// ============================================================
+//  CONFIGURACIÓN DE TAREAS
 // ============================================================
 const TASK_CONFIG = {
   stroop:  { table: 'stroop_trials',  rtField: 'rt',    groupField: 'cohort' },
@@ -232,15 +363,11 @@ let rawData = [];
 let allData = [];
 let chartInstance = null;
 
-// ============================================================
-//  FUNCIONES AUXILIARES
-// ============================================================
 function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
 function std(arr) { if(arr.length<2) return 0; let m=mean(arr); return Math.sqrt(arr.reduce((s,x)=>s+(x-m)**2,0)/(arr.length-1)); }
 
 // Cálculo de D-score para IAT (Greenwald et al., 2003)
 function computeIATdScore(data) {
-  // data son todos los trials de un participante
   const block3 = data.filter(t => t.block_index === 2 && t.correct === true);
   const block5 = data.filter(t => t.block_index === 4 && t.correct === true);
   if (block3.length === 0 || block5.length === 0) return null;
@@ -428,12 +555,10 @@ function renderStats(data) {
              <div class="stat-card"><div class="stat-label">Media movimientos</div><div class="stat-value">${avgMoves.toFixed(1)}</div></div>`;
   }
   else if (currentTask === 'iat') {
-    // Estadísticas para IAT
     const participantsIAT = [...new Set(data.map(d=>d.participant_id).filter(Boolean))];
     const total = data.length;
     const correct = data.filter(d => d.correct).length;
     const acc = total ? (correct / total * 100).toFixed(1) : 0;
-    // Calcular D-score global a partir de los datos (agregando por participante y promediando)
     let dScores = [];
     for (let pid of participantsIAT) {
       const pData = data.filter(d => d.participant_id === pid);
@@ -740,8 +865,8 @@ async function exportPDF() {
   pdf.save(`${currentTask}_dashboard_${new Date().toISOString().slice(0,10)}.pdf`);
 }
 
-// Inicializar
-loadData();
+// Inicializar: comprobar sesión
+checkSession();
 </script>
 </body>
 </html>
