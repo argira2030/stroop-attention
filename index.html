@@ -1,420 +1,612 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-ES">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>Batería Cognitiva · HCI Lab</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Argira Cognitive Lab — Batería de Tareas</title>
+<meta name="description" content="Batería de tareas cognitivas validadas científicamente. Atención, memoria, inhibición, flexibilidad. Código abierto, sin tracking. Argira Station.">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #0a0a0a;
-  --surface: #111111;
-  --border: #2a2a2a;
-  --text: #f0f0f0;
-  --muted: #666;
-  --accent: #e8ff4a;
-  --accent2: #ff4a6e;
-  --accent3: #4affda;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Space Mono', monospace;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(232,255,74,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(232,255,74,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
-}
-.container {
-  position: relative;
-  z-index: 1;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 24px;
-}
-.header {
-  text-align: center;
-  margin-bottom: 48px;
-}
-.logo {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 16px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 16px;
-}
-h1 {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(36px, 6vw, 56px);
-  font-weight: 800;
-  line-height: 1.1;
-}
-h1 span {
-  color: var(--accent);
-}
-.sub {
-  font-size: 13px;
-  color: var(--muted);
-  max-width: 700px;
-  margin: 16px auto 0;
-}
-.ethics {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 16px 20px;
-  border-radius: 4px;
-  font-size: 11px;
-  color: var(--muted);
-  margin: 32px auto;
-  max-width: 700px;
-  text-align: center;
-}
-.ethics strong {
-  color: var(--accent3);
-  display: block;
-  margin-bottom: 6px;
-}
-.task-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
-  margin: 40px 0;
-}
-.task-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  transition: transform 0.2s ease, border-color 0.2s;
-}
-.task-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--accent);
-}
-.task-icon {
-  font-size: 40px;
-  margin-bottom: 12px;
-}
-.task-card h2 {
-  font-family: 'Syne', sans-serif;
-  font-size: 20px;
-  font-weight: 800;
-  margin-bottom: 8px;
-}
-.task-card p {
-  font-size: 11px;
-  color: var(--muted);
-  line-height: 1.6;
-  margin-bottom: 20px;
-}
-.task-btn {
-  display: inline-block;
-  width: 100%;
-  text-align: center;
-  padding: 12px;
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  text-decoration: none;
-  border-radius: 40px;
-  transition: all 0.2s;
-}
-.task-btn:hover {
-  background: var(--accent);
-  color: #000;
-  border-color: var(--accent);
-}
-.donate-box {
-  text-align: center;
-  margin: 40px 0 20px;
-  padding: 24px;
-  background: rgba(232,255,74,0.05);
-  border-radius: 12px;
-}
-.donate-btn {
-  background: var(--accent);
-  color: #000;
-  padding: 14px 32px;
-  border-radius: 40px;
-  text-decoration: none;
-  font-weight: 800;
-  font-size: 14px;
-  letter-spacing: 0.1em;
-  display: inline-block;
-  transition: opacity 0.2s;
-}
-.donate-btn:hover {
-  opacity: 0.85;
-}
-.footer {
-  text-align: center;
-  margin-top: 48px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
-  font-size: 10px;
-  color: var(--muted);
-}
-@media (max-width: 680px) {
-  .container { padding: 24px 16px; }
-  .task-grid { gap: 16px; }
-}
+  :root {
+    --bg: #04040a;
+    --gold: #f5c842;
+    --gold2: #e8a800;
+    --text: #e8e8f0;
+    --muted: #9a9ab8;
+    --border: #111122;
+    --surface: #090912;
+    --accent2: #ff4a6e;
+    --accent3: #4affda;
+  }
 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  html { scroll-behavior: smooth; }
 
-  /* ===== MEJORAS DE LEGIBILIDAD PARA INDEX.HTML ===== */
-/* TEXTO PRINCIPAL (debajo del título) */
-.sub {
-  font-size: 16px !important;
-  color: #ffffff !important;
-  line-height: 1.5 !important;
-  max-width: 700px;
-  margin: 0 auto;
-}
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-/* CAJA ÉTICA */
-.ethics {
-  font-size: 13px !important;
-  color: #dddddd !important;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 18px 20px;
-  border-radius: 8px;
-  line-height: 1.5;
-}
-.ethics strong {
-  color: var(--accent3);
-  font-size: 14px;
-}
+  /* Stars background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 60%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 70%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 35% 90%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 65% 45%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(2px 2px at 75% 85%, rgba(245,200,66,0.3) 0%, transparent 100%),
+      radial-gradient(2px 2px at 25% 15%, rgba(245,200,66,0.2) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
 
-/* RECUADRO ROJIZO KO-FI */
-.contribute-box {
-  background: rgba(255,74,110,0.08);
-  border: 1px solid var(--accent2);
-  border-radius: 12px;
-  padding: 24px 28px;
-  margin: 24px 0 32px 0;
-  text-align: center;
-  backdrop-filter: blur(4px);
-}
-.contribute-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 22px;
-  font-weight: 800;
-  margin-bottom: 12px;
-  color: var(--accent2);
-}
-.contribute-text {
-  font-size: 14px;
-  color: #ffffff !important;
-  max-width: 650px;
-  margin: 0 auto 16px auto;
-  line-height: 1.5;
-}
-.contribute-note {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 16px;
-}
+  /* Skip link */
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    background: var(--gold);
+    color: #0a0a0f;
+    padding: 8px 16px;
+    font-weight: 700;
+    border-radius: 0 0 8px 8px;
+    z-index: 9999;
+    text-decoration: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+  }
+  .skip-link:focus { left: 20px; }
 
-/* TARJETAS DE TAREAS */
-.task-card h2 {
-  font-size: 22px !important;
-  color: #ffffff !important;
-  margin-bottom: 10px;
-}
-.task-card p {
-  font-size: 12px !important;
-  color: #cccccc !important;
-  line-height: 1.6;
-}
+  /* Header */
+  header {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 60px 20px 40px;
+  }
 
-/* FOOTER */
-.footer {
-  font-size: 11px !important;
-  color: #aaaaaa !important;
-  line-height: 1.5;
-  text-align: center;
-  margin-top: 48px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
-}
+  .signal {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    animation: blink 2s ease-in-out infinite;
+  }
 
-/* BOTONES (opcional, para que tengan mejor contraste) */
-.task-btn {
-  color: #eeeeee !important;
-}
-.task-btn:hover {
-  color: #000000 !important;
-}
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .logo-wrap {
+    display: inline-block;
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  .logo-emoji {
+    font-size: 3rem;
+    display: block;
+    animation: float 4s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(245,200,66,0.4));
+  }
+
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  h1 {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+
+  h1 em {
+    font-style: normal;
+    color: var(--gold);
+    position: relative;
+  }
+
+  h1 em::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gold);
+    opacity: 0.4;
+  }
+
+  .tagline {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+    color: #b0b0cc;
+    max-width: 600px;
+    margin: 0 auto 32px;
+    line-height: 1.6;
+    font-weight: 400;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--gold);
+    text-decoration: none;
+    margin-bottom: 20px;
+    transition: opacity 0.2s;
+  }
+  .back-link:hover { opacity: 0.7; }
+
+  /* Signal line */
+  .signal-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    margin: 0 auto 40px;
+    opacity: 0.5;
+  }
+
+  /* Ethics box */
+  .ethics {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto 40px;
+    padding: 0 20px;
+  }
+  .ethics-inner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 24px;
+    text-align: center;
+  }
+  .ethics-inner strong {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .ethics-inner p {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* Section label */
+  .section-label {
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto 16px;
+    padding: 0 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Grid */
+  .grid {
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+
+  .card:hover {
+    border-color: rgba(245,200,66,0.25);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 20px rgba(245,200,66,0.05);
+  }
+
+  .card:hover::before { opacity: 1; }
+
+  .card-icon { font-size: 1.8rem; }
+
+  .card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .card-desc {
+    font-size: 0.82rem;
+    color: #c8c8e0;
+    line-height: 1.5;
+    font-family: 'DM Mono', monospace;
+    flex: 1;
+  }
+
+  .card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.65rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--gold);
+    border: 1px solid rgba(245,200,66,0.35);
+    border-radius: 99px;
+    padding: 3px 10px;
+    width: fit-content;
+  }
+  .card-tag::before { content: '●'; font-size: 0.5rem; }
+
+  .card-btn {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.2s;
+    margin-top: 4px;
+  }
+  .card-btn:hover {
+    background: var(--gold);
+    color: #000;
+    border-color: var(--gold);
+  }
+
+  /* Contribute box */
+  .contribute {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto 40px;
+    padding: 0 20px;
+  }
+  .contribute-inner {
+    background: rgba(255,74,110,0.06);
+    border: 1px solid rgba(255,74,110,0.25);
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+    backdrop-filter: blur(4px);
+  }
+  .contribute-inner h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--accent2);
+    margin-bottom: 10px;
+  }
+  .contribute-inner p {
+    font-size: 0.85rem;
+    color: #ccc;
+    max-width: 500px;
+    margin: 0 auto 16px;
+    line-height: 1.5;
+  }
+  .contribute-inner .note {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+  .kofi-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: var(--accent2);
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .kofi-btn:hover { opacity: 0.85; transform: translateY(-2px); }
+  .kofi-btn svg { width: 16px; height: 16px; fill: #fff; }
+
+  /* Footer */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 40px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  footer p {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 2;
+  }
+
+  footer a { color: var(--gold); text-decoration: none; }
+
+  .peace {
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.3em;
+    margin-top: 16px;
+  }
+
+  /* Accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+    h1 { font-size: 2rem; }
+    .subtitle { font-size: 0.85rem; }
+    .contribute-inner { padding: 20px; }
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <div class="logo">ARGIRA · HCI COGNITIVE LAB</div>
-    <h1>Batería de <span>tareas</span><br>cognitivas</h1><br/>
-    <div class="sub">16 tareas validadas científicamente para investigación en atención, memoria, inhibición y flexibilidad. Código abierto (MIT), sin tracking, almacenamiento en Supabase.</div>
+
+<a href="#main-content" class="skip-link">Saltar al contenido principal · Skip to main content</a>
+
+<header>
+  <a href="https://argira.eus" class="back-link" aria-label="Volver a Argira Station">← Volver a Argira Station</a>
+  <p class="signal" aria-label="Argira Cognitive Lab, Bilbao">⚡ ARGIRA COGNITIVE LAB · BILBAO</p>
+  <div class="logo-wrap">
+    <span class="logo-emoji" role="img" aria-label="Girasol">🌻</span>
   </div>
+  <h1>Batería de <em>Tareas</em><br>Cognitivas</h1>
+  <p class="tagline">HCI LAB · ATENCIÓN · MEMORIA · INHIBICIÓN · FLEXIBILIDAD</p>
+  <p class="subtitle">16 tareas validadas científicamente para investigación en atención, memoria, inhibición y flexibilidad cognitiva. Código abierto (MIT), sin tracking, datos anónimos en Supabase.</p>
+  <div class="signal-line" aria-hidden="true"></div>
+</header>
 
-<!-- ===== CONTRIBUCIÓN ÉTICA (recuadro rojizo al inicio) ===== -->
-<div style="background: rgba(255,74,110,0.08); border: 1px solid var(--accent2); border-radius: 12px; padding: 20px 24px; margin: 24px 0; text-align: center; backdrop-filter: blur(4px);">
-  <div style="font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 8px; color: var(--accent2);">💚 Contribución ética</div>
-  <p style="font-size: 12px; color: #ccc; max-width: 600px; margin: 0 auto 12px auto;">
-    Este proyecto es <strong>código abierto (MIT)</strong>, sin tracking y gratuito. Si te resulta útil y quieres ayudar a mantenerlo, puedes hacer una contribución voluntaria.
-  </p>
-  <a href="https://ko-fi.com/argira" target="_blank" class="task-btn" style="background: var(--accent2); color: #000; border: none; width: auto; padding: 10px 24px; display: inline-block;">☕ Apoyar en Ko‑fi</a>
- <a href="https://www.paypal.me/JoseRaneroGarcia" target="_blank" class="btn btn-donar">👉PayPal</a>
-  <p style="font-size: 10px; color: var(--muted); margin-top: 12px;">Contribuciones únicas · Sin suscripción obligatoria · Gracias por sostener el desarrollo ético</p>
-</div>
-
-    <div class="ethics">
+<div class="ethics">
+  <div class="ethics-inner">
     <strong>⚖ Ethical Statement</strong>
-    Sin cookies · Datos anónimos en Supabase · Solo para investigación · Jose Ranero García (ORCID 0009-0009-3168-6379)
-    </div>
-  <div class="task-grid">
-        <!-- CORSI -->
-    <div class="task-card">
-      <div class="task-icon">🧩</div>
-      <h2>Corsi Blocks</h2>
-      <p>Memoria visoespacial · Span</p>
-      <a href="corsi_task.html" class="task-btn">Iniciar →</a>
-    </div>
-    <!-- FLANKER -->
-    <div class="task-card">
-      <div class="task-icon">⬅️➡️</div>
-      <h2>Flanker</h2>de
-      <p>Atención selectiva · Supresión de distractores</p>
-      <a href="flanker_task.html" class="task-btn">Iniciar →</a>
-    </div>
-    <!-- SIMON -->
-    <div class="task-card">
-      <div class="task-icon">📍</div>
-      <h2>Simon</h2>
-      <p>Compatibilidad espacial · Conflicto posición‑significado</p>
-      <a href="simon_task.html" class="task-btn">Iniciar →</a>
-    </div>
-    <!-- GO/NO-GO -->
-    <div class="task-card">
-      <div class="task-icon">⛔</div>
-      <h2>Go/No‑go</h2>
-      <p>Control inhibitorio · Supresión de respuesta</p>
-      <a href="gonogo_task.html" class="task-btn">Iniciar →</a>
-    </div>
-    <!-- ANT -->
-    <div class="task-card">
-      <div class="task-icon">🧠</div>
-      <h2>ANT</h2>
-      <p>Redes atencionales · Alerta, orientación, conflicto</p>
-      <a href="ant.html" class="task-btn">Iniciar →</a>
-    </div>
-    <!-- N‑BACK -->
-    <div class="task-card">
-      <div class="task-icon">🔄</div>
-      <h2>N‑back</h2>
-      <p>Memoria de trabajo · Actualización</p>
-      <a href="nback.html" class="task-btn">Iniciar →</a>
-    </div>
-    <!-- POSNER -->
-    <div class="task-card">
-      <div class="task-icon">🎯</div>
-      <h2>Posner</h2>
-      <p>Orientación espacial · Señalización atencional</p>
-      <a href="posner_task.html" class="task-btn">Iniciar →</a>
-    </div>
-    <!-- TASK SWITCH -->
-    <div class="task-card">
-      <div class="task-icon">🔄</div>
-      <h2>Task Switch</h2>
-      <p>Flexibilidad cognitiva · Cambio de regla</p>
-      <a href="task_switch.html" class="task-btn">Iniciar →</a>
-    </div>
-    <!-- WCST -->
-    <div class="task-card">
-      <div class="task-icon">🧩</div>
-      <h2>WCST</h2>
-      <p>Flexibilidad, perseveración, formación de conceptos</p>
-      <a href="wcst_task.html" class="task-btn">Iniciar →</a>
-    </div>
-    <!-- SART -->
-    <div class="task-card">
-      <div class="task-icon">⏱️</div>
-      <h2>SART</h2>
-      <p>Atención sostenida · Respuesta al número 3</p>
-      <a href="sart_task.html" class="task-btn">Iniciar →</a>
-    </div>
-
-    <!-- DIGIT SPAN -->
-    <div class="task-card">
-      <div class="task-icon">🔢</div>
-      <h2>Digit Span</h2>
-      <p>Memoria de trabajo verbal (forward/backward)</p>
-      <a href="digit_span_task.html" class="task-btn">Iniciar →</a>
-    </div>
-    <!-- NAVON -->
-    <div class="task-card">
-      <div class="task-icon">🔍</div>
-      <h2>Navon</h2>
-      <p>Procesamiento global‑local · Interferencia jerárquica</p>
-      <a href="navon_task.html" class="task-btn">Iniciar →</a>
-    </div>
-    <!-- IOWA GAMBLING -->
-    <div class="task-card">
-      <div class="task-icon">🎲</div>
-      <h2>Iowa Gambling</h2>
-      <p>Toma de decisiones · Riesgo y recompensa</p>
-      <a href="iowa_task.html" class="task-btn">Iniciar →</a>
-    </div>
-    <!-- TOWER OF LONDON -->
-    <div class="task-card">
-      <div class="task-icon">🏰</div>
-      <h2>Tower of London</h2>
-      <p>Planificación · Resolución de problemas</p>
-      <a href="tol_task.html" class="task-btn">Iniciar →</a>
-    </div>
-    <!-- IAT (IMPLICIT ASSOCIATION TEST) -->
-    <div class="task-card">
-      <div class="task-icon">🧠</div>
-      <h2>IAT (Nombres)</h2>
-      <p>Asociación implícita · Calidez / Competencia</p>
-      <a href="iat_task.html" class="task-btn">Iniciar →</a>
-    </div>
-  </div>
-<!-- STROOP -->
-    <div class="task-card">
-      <div class="task-icon">🎨</div>
-      <h2>Stroop</h2>
-      <p>Interferencia semántica · Inhibición de palabras</p>
-      <a href="stroop_v6_supabase.html" class="task-btn">Iniciar →</a>
-    </div>
-  <div class="donate-box">
-    <a href="contribution.html" class="donate-btn">💚 Apoya el proyecto ético</a>
-    <p style="font-size:10px; color:var(--muted); margin-top:12px;">Contribuciones voluntarias · Instalación · Plantillas · Versión institucional</p>
-
-
-  <a href="https://ko-fi.com/argira" target="_blank" style="color: var(--accent3); text-decoration: none; margin-left: 12px;">☕ Ko‑fi</a>
-  </div>
-
-  <div class="footer">
-    <span>// Código abierto (MIT) · Datos en Supabase · Desarrollo sostenible</span>
-    <span style="display:block; margin-top:8px;">Jose Ranero García · ORCID 0009-0009-3168-6379</span>
+    <p>Sin cookies · Datos anónimos en Supabase · Solo para investigación · Jose Ranero García (ORCID 0009-0009-3168-6379)</p>
   </div>
 </div>
+
+<div class="section-label" role="heading" aria-level="2">Atención y Memoria · Attention & Memory</div>
+
+<main id="main-content" class="grid" role="main" aria-label="Batería de tareas cognitivas">
+
+  <div class="card" aria-label="Stroop — Interferencia semántica e inhibición de palabras">
+    <span class="card-icon" aria-hidden="true">🎨</span>
+    <div class="card-title">Stroop</div>
+    <p class="card-desc">Interferencia semántica · Inhibición de palabras · Efecto de interferencia color-significado</p>
+    <span class="card-tag">Atención · MIT</span>
+    <a href="stroop_v6_supabase.html" class="card-btn">Iniciar →</a>
+  </div>
+
+  <div class="card" aria-label="Flanker — Atención selectiva y supresión de distractores">
+    <span class="card-icon" aria-hidden="true">⬅️➡️</span>
+    <div class="card-title">Flanker</div>
+    <p class="card-desc">Atención selectiva · Supresión de distractores laterales · Efecto Flanker</p>
+    <span class="card-tag">Atención · MIT</span>
+    <a href="flanker_task.html" class="card-btn">Iniciar →</a>
+  </div>
+
+  <div class="card" aria-label="Simon — Compatibilidad espacial y conflicto posición-significado">
+    <span class="card-icon" aria-hidden="true">📍</span>
+    <div class="card-title">Simon</div>
+    <p class="card-desc">Compatibilidad espacial · Conflicto posición‑significado · Efecto Simon</p>
+    <span class="card-tag">Atención · MIT</span>
+    <a href="simon_task.html" class="card-btn">Iniciar →</a>
+  </div>
+
+  <div class="card" aria-label="Go/No-go — Control inhibitorio y supresión de respuesta">
+    <span class="card-icon" aria-hidden="true">⛔</span>
+    <div class="card-title">Go / No‑go</div>
+    <p class="card-desc">Control inhibitorio · Supresión de respuesta · Discriminación go/no-go</p>
+    <span class="card-tag">Inhibición · MIT</span>
+    <a href="gonogo_task.html" class="card-btn">Iniciar →</a>
+  </div>
+
+  <div class="card" aria-label="ANT — Redes atencionales: alerta, orientación y conflicto">
+    <span class="card-icon" aria-hidden="true">🧠</span>
+    <div class="card-title">ANT</div>
+    <p class="card-desc">Redes atencionales · Alerta, orientación, conflicto · Attention Network Test</p>
+    <span class="card-tag">Atención · MIT</span>
+    <a href="ant.html" class="card-btn">Iniciar →</a>
+  </div>
+
+  <div class="card" aria-label="N-back — Memoria de trabajo y actualización">
+    <span class="card-icon" aria-hidden="true">🔄</span>
+    <div class="card-title">N‑back</div>
+    <p class="card-desc">Memoria de trabajo · Actualización · Mantenimiento y manipulación</p>
+    <span class="card-tag">Memoria · MIT</span>
+    <a href="nback.html" class="card-btn">Iniciar →</a>
+  </div>
+
+  <div class="card" aria-label="Posner — Orientación espacial y señalización atencional">
+    <span class="card-icon" aria-hidden="true">🎯</span>
+    <div class="card-title">Posner</div>
+    <p class="card-desc">Orientación espacial · Señalización atencional · Efecto de validación/invalidación</p>
+    <span class="card-tag">Atención · MIT</span>
+    <a href="posner_task.html" class="card-btn">Iniciar →</a>
+  </div>
+
+  <div class="card" aria-label="Task Switch — Flexibilidad cognitiva y cambio de regla">
+    <span class="card-icon" aria-hidden="true">🔀</span>
+    <div class="card-title">Task Switch</div>
+    <p class="card-desc">Flexibilidad cognitiva · Cambio de regla · Coste de conmutación</p>
+    <span class="card-tag">Flexibilidad · MIT</span>
+    <a href="task_switch.html" class="card-btn">Iniciar →</a>
+  </div>
+
+</main>
+
+<div class="section-label" role="heading" aria-level="2">Memoria y Ejecución · Memory & Executive</div>
+
+<div class="grid">
+
+  <div class="card" aria-label="Corsi Blocks — Memoria visoespacial y span">
+    <span class="card-icon" aria-hidden="true">🧩</span>
+    <div class="card-title">Corsi Blocks</div>
+    <p class="card-desc">Memoria visoespacial · Span de Corsi · Secuencias espaciales</p>
+    <span class="card-tag">Memoria · MIT</span>
+    <a href="corsi_task.html" class="card-btn">Iniciar →</a>
+  </div>
+
+  <div class="card" aria-label="WCST — Flexibilidad, perseveración y formación de conceptos">
+    <span class="card-icon" aria-hidden="true">🃏</span>
+    <div class="card-title">WCST</div>
+    <p class="card-desc">Flexibilidad, perseveración, formación de conceptos · Wisconsin Card Sorting</p>
+    <span class="card-tag">Ejecución · MIT</span>
+    <a href="wcst_task.html" class="card-btn">Iniciar →</a>
+  </div>
+
+  <div class="card" aria-label="SART — Atención sostenida y respuesta al número 3">
+    <span class="card-icon" aria-hidden="true">⏱️</span>
+    <div class="card-title">SART</div>
+    <p class="card-desc">Atención sostenida · Respuesta al número 3 · Sustained Attention</p>
+    <span class="card-tag">Atención · MIT</span>
+    <a href="sart_task.html" class="card-btn">Iniciar →</a>
+  </div>
+
+  <div class="card" aria-label="Digit Span — Memoria de trabajo verbal forward/backward">
+    <span class="card-icon" aria-hidden="true">🔢</span>
+    <div class="card-title">Digit Span</div>
+    <p class="card-desc">Memoria de trabajo verbal · Forward / backward · Span numérico</p>
+    <span class="card-tag">Memoria · MIT</span>
+    <a href="digit_span_task.html" class="card-btn">Iniciar →</a>
+  </div>
+
+  <div class="card" aria-label="Navon — Procesamiento global-local e interferencia jerárquica">
+    <span class="card-icon" aria-hidden="true">🔍</span>
+    <div class="card-title">Navon</div>
+    <p class="card-desc">Procesamiento global‑local · Interferencia jerárquica · Letras grandes/pequeñas</p>
+    <span class="card-tag">Percepción · MIT</span>
+    <a href="navon_task.html" class="card-btn">Iniciar →</a>
+  </div>
+
+  <div class="card" aria-label="Iowa Gambling — Toma de decisiones, riesgo y recompensa">
+    <span class="card-icon" aria-hidden="true">🎲</span>
+    <div class="card-title">Iowa Gambling</div>
+    <p class="card-desc">Toma de decisiones · Riesgo y recompensa · Aprendizaje por refuerzo</p>
+    <span class="card-tag">Decisión · MIT</span>
+    <a href="iowa_task.html" class="card-btn">Iniciar →</a>
+  </div>
+
+  <div class="card" aria-label="Tower of London — Planificación y resolución de problemas">
+    <span class="card-icon" aria-hidden="true">🏰</span>
+    <div class="card-title">Tower of London</div>
+    <p class="card-desc">Planificación · Resolución de problemas · Secuencias óptimas</p>
+    <span class="card-tag">Ejecución · MIT</span>
+    <a href="tol_task.html" class="card-btn">Iniciar →</a>
+  </div>
+
+  <div class="card" aria-label="IAT Nombres — Asociación implícita calidez/competencia">
+    <span class="card-icon" aria-hidden="true">🧠</span>
+    <div class="card-title">IAT (Nombres)</div>
+    <p class="card-desc">Asociación implícita · Calidez / Competencia · Implicit Association Test</p>
+    <span class="card-tag">Social · MIT</span>
+    <a href="iat_task.html" class="card-btn">Iniciar →</a>
+  </div>
+
+</div>
+
+<div class="contribute">
+  <div class="contribute-inner">
+    <h3>💚 Contribución ética</h3>
+    <p>Este proyecto es <strong>código abierto (MIT)</strong>, sin tracking y gratuito. Si te resulta útil y quieres ayudar a mantenerlo, puedes hacer una contribución voluntaria.</p>
+    <a href="https://ko-fi.com/argira" target="_blank" rel="noopener" class="kofi-btn" aria-label="Apoyar en Ko-fi">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.708-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 2.694.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z"/></svg>
+      Apoyar en Ko‑fi
+    </a>
+    <p class="note">Contribuciones únicas · Sin suscripción obligatoria · Gracias por sostener el desarrollo ético</p>
+  </div>
+</div>
+
+<footer role="contentinfo" aria-label="Información del sitio">
+  <p>
+    Argira Cognitive Lab · Jose Ranero García · Bilbao · 2026<br>
+    ORCID: <a href="https://orcid.org/0009-0009-3168-6379" target="_blank">0009-0009-3168-6379</a> ·
+    <a href="https://zenodo.org/search?q=argira" target="_blank">Zenodo</a> ·
+    <a href="https://ko-fi.com/argira" target="_blank">Ko-fi</a>
+  </p>
+  <p style="margin-top:8px;">
+    Código abierto (MIT) · Sin tracking · Sin publicidad · Datos anónimos en Supabase<br>
+    CC BY-NC 4.0 (Argira) · MIT (herramientas)
+  </p>
+  <p class="peace">🕊️ PAZ · PEACE · 平和 · السلام · Мир · শান্তি</p>
+</footer>
+
 </body>
 </html>
